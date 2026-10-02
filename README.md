@@ -26,3 +26,15 @@ Project documentation belongs in the repository and should evolve with the imple
 ## License
 
 No license has been selected yet.
+
+## ASTRA CITY — Switchback Ward
+
+The recovered playable city lives in [games/astra-city](games/astra-city/README.md). It includes the native WebGPU renderer, procedural district, missions, local saves, controls, tests, and recovery checkpoints.
+
+```bash
+cd games/astra-city
+npm ci
+npm start
+```
+
+Open http://localhost:4173 in a browser with a usable WebGPU adapter. See [build and validation instructions](games/astra-city/BUILD.md) and [current project state](games/astra-city/PROJECT_STATE.md).

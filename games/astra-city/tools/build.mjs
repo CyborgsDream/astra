@@ -1,0 +1,20 @@
+import {build} from 'esbuild';
+import {readFile, writeFile, mkdir, copyFile} from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+await mkdir(path.join(root,'dist'),{recursive:true});
+const common = {bundle:true,minify:true,target:['chrome120'],legalComments:'none',logLevel:'warning'};
+await build({...common,entryPoints:[path.join(root,'src/main.js')],outfile:path.join(root,'dist/app.js'),format:'iife'});
+await build({...common,entryPoints:[path.join(root,'world-worker.js')],outfile:path.join(root,'dist/world-worker.js'),format:'iife'});
+await copyFile(path.join(root,'src/ui/style.css'),path.join(root,'dist/style.css'));
+let template = await readFile(path.join(root,'index.html'),'utf8');
+const html = template.replace('./src/ui/style.css','./style.css').replace('<script type="module" src="./src/main.js"></script>','<script defer src="./app.js"></script>');
+await writeFile(path.join(root,'dist/index.html'),html);
+const [script,worker,style] = await Promise.all(['app.js','world-worker.js','style.css'].map(f=>readFile(path.join(root,'dist',f),'utf8')));
+const safeScript = script.replace(/<\/script/gi,'<\\/script');
+const safeWorker = JSON.stringify(worker).replace(/</g,'\\u003c');
+const single = template.replace('<link rel="stylesheet" href="./src/ui/style.css">',`<style>${style}</style>`)
+  .replace('<script type="module" src="./src/main.js"></script>',`<script>window.__ASTRA_WORKER_SOURCE__=${safeWorker};</script><script>${safeScript}</script>`);
+await writeFile(path.join(root,'dist/astra-city.html'),single);
+console.log(JSON.stringify({ok:true,files:['index.html','app.js','world-worker.js','style.css','astra-city.html'],standaloneBytes:Buffer.byteLength(single)}));

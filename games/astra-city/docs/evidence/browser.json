@@ -1,0 +1,244 @@
+{
+  "boot": {
+    "ready": true,
+    "mode": "menu"
+  },
+  "started": true,
+  "pause": "pause",
+  "map": "District map",
+  "dialogue": "Conversation",
+  "questAccepted": "active",
+  "intro": {
+    "entry": {
+      "status": "completed",
+      "stage": 2,
+      "progress": 0,
+      "run": 1,
+      "paidRuns": 1,
+      "completions": 1,
+      "choice": null,
+      "acceptedAt": 0.13329999999999928,
+      "completedAt": 0.13329999999999928
+    },
+    "credits": 157
+  },
+  "inventory": "Inventory",
+  "settings": 1,
+  "hack": {
+    "panel": "hack",
+    "tiles": 9
+  },
+  "hackCompleted": true,
+  "assistedRepair": true,
+  "assistedMistake": {
+    "cost": 1,
+    "panel": "dialogue"
+  },
+  "rewardDoor": {
+    "quest": "completed",
+    "collisionOpen": true,
+    "visualRemoved": true
+  },
+  "story": {
+    "ending": {
+      "id": "commons",
+      "title": "A Key for Every Shift",
+      "text": "The Commons posts a public shift board beneath the switch. Residents choose their maintenance crews, and every outage report stays visible. The rescued workers return on their own terms. Across Switchback, apartment lights hold steady."
+    },
+    "complete": true,
+    "panel": "dialogue",
+    "power": true
+  },
+  "endingVisible": true,
+  "endingReplay": true,
+  "saved": true,
+  "reload": {
+    "matches": true,
+    "before": {
+      "credits": 562,
+      "quests": {
+        "intro": {
+          "status": "completed",
+          "stage": 2,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "static_below": {
+          "status": "completed",
+          "stage": 3,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "missing_shift": {
+          "status": "completed",
+          "stage": 4,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "sealed_orders": {
+          "status": "completed",
+          "stage": 3,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "district_choice": {
+          "status": "completed",
+          "stage": 3,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": "commons",
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        }
+      },
+      "position": [
+        -17,
+        0,
+        -17
+      ]
+    },
+    "after": {
+      "credits": 562,
+      "quests": {
+        "intro": {
+          "status": "completed",
+          "stage": 2,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "static_below": {
+          "status": "completed",
+          "stage": 3,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "missing_shift": {
+          "status": "completed",
+          "stage": 4,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "sealed_orders": {
+          "status": "completed",
+          "stage": 3,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": null,
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        },
+        "district_choice": {
+          "status": "completed",
+          "stage": 3,
+          "progress": 0,
+          "run": 1,
+          "paidRuns": 1,
+          "completions": 1,
+          "choice": "commons",
+          "acceptedAt": 0.13329999999999928,
+          "completedAt": 0.13329999999999928
+        }
+      },
+      "position": [
+        -17,
+        0,
+        -17
+      ]
+    }
+  },
+  "renderer": {
+    "errors": [],
+    "stats": {
+      "backend": "WebGPU",
+      "frameMs": 39.25400000000001,
+      "cpuMs": 2.2999999998137355,
+      "gpuMs": null,
+      "drawCalls": 17,
+      "instances": 59236,
+      "visibleObjects": 0,
+      "triangles": 0,
+      "memoryBytes": 23660408,
+      "loadedCells": 16,
+      "shadowVisibleObjects": 0,
+      "shadowTriangles": 0,
+      "lines": 0,
+      "statsSampleFrame": 0,
+      "visibilityPending": true,
+      "computeDispatches": 8,
+      "adapter": "google / swiftshader",
+      "renderWidth": 640,
+      "renderHeight": 360,
+      "samples": 1,
+      "quality": "low",
+      "timestampQueries": true,
+      "npcCount": 53,
+      "trafficCount": 14,
+      "fps": 25.475110816732045,
+      "worldObjects": 57535,
+      "renderScale": 0.5,
+      "collisionQueries": 0,
+      "securityExposure": 0
+    },
+    "errorsAll": []
+  },
+  "mobile": {
+    "viewport": 390,
+    "scroll": 390,
+    "menu": true
+  },
+  "rain": {
+    "rendered": true,
+    "errors": []
+  },
+  "webMcpAvailable": false,
+  "disposed": true,
+  "standalone": {
+    "ready": true,
+    "workerEmbedded": true,
+    "errors": []
+  },
+  "unsupported": {
+    "message": "Native WebGPU is unavailable. Open the city in a browser with WebGPU enabled on a secure origin.",
+    "visible": true
+  },
+  "errors": []
+}

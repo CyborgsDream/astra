@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "project": "ASTRA CITY",
+  "district": "Switchback Ward",
+  "sourceRepository": "https://github.com/CyborgsDream/astra",
+  "siteProjectId": "appgprj_6abfb927f728819192c2af12e719370e",
+  "recoveredSiteCommit": "0bf5e486b014e0b8991ec95dd23373a454ab36c6",
+  "archiveFolderUrl": "https://drive.google.com/drive/folders/1IrebhwrQ4MianlKJ_JMglHKZRvxwaMyc",
+  "archiveFolderId": "1IrebhwrQ4MianlKJ_JMglHKZRvxwaMyc",
+  "checkpoints": [
+    {
+      "milestone": "recovered",
+      "createdAt": "2026-10-02T15:33:41.263Z",
+      "filename": "ASTRA_CITY_checkpoint_20261002_1733_recovered.zip",
+      "sourceCommit": "0bf5e486b014e0b8991ec95dd23373a454ab36c6",
+      "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1733_recovered.zip",
+      "status": "local",
+      "includesWorkingTree": true,
+      "archive": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1733_recovered.zip",
+      "bytes": 1219960,
+      "files": 55,
+      "sha256": "d07a704d77855a6d990177a683ac330d486acc0f1f00540203b290030e502db4",
+      "integrity": "passed"
+    },
+    {
+      "milestone": "m1_recovered",
+      "createdAt": "2026-10-02T15:34:32.504Z",
+      "filename": "ASTRA_CITY_checkpoint_20261002_1734_m1_recovered.zip",
+      "sourceCommit": "0bf5e486b014e0b8991ec95dd23373a454ab36c6",
+      "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1734_m1_recovered.zip",
+      "status": "local",
+      "includesWorkingTree": true
+    }
+  ],
+  "updatedAt": "2026-10-02T15:34:32.504Z"
+}

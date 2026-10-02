@@ -29,6 +29,15 @@ try{
  await quality();
  await page.waitForFunction(()=>window.__ASTRA__.getMode()==='playing');
  results.started=true;
+ await page.evaluate(async()=>{
+   const a=window.__ASTRA__;
+   await a.onAction('settings',{quality:'medium',renderScale:.75,adaptive:false,volume:0});
+   await a.renderAt([-21.8,0,-22.35],Math.PI-.06,-.025);
+   await a.renderer.device.queue.onSubmittedWorkDone();
+ });
+ results.densityView=await page.evaluate(()=>({density:window.__ASTRA__.world.densityReport,stats:window.__ASTRA__.getStats(),ambient:window.__ASTRA__.world.ambientAnchors?.length||0}));
+ await page.screenshot({path:output+'/street-density.png',timeout:45000});
+ await quality();
  await page.keyboard.press('Escape');
  await page.waitForFunction(()=>window.__ASTRA__.ui.isOpen);
  results.pause=await page.evaluate(()=>window.__ASTRA__.ui.panel);

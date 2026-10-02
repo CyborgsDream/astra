@@ -559,7 +559,7 @@ export class Population {
     this._collect();
   }
   instances() { return this._instances; }
-  getStats() { return {npcCount:this._people.length,trafficCount:this._traffic.length,ambientCount:this._ambient.length,ambientActivities:[...new Set(this._ambient.map(a=>a.activity?.type).filter(Boolean))]}; }
+  getStats() { const base={npcCount:this._people.length,trafficCount:this._traffic.length}; return this._ambient.length?{...base,ambientCount:this._ambient.length,ambientActivities:[...new Set(this._ambient.map(a=>a.activity?.type).filter(Boolean))]}:base; }
   spawn(role='resident',position=this._player) {
     if(this.disposed)return {ok:false,message:'Population is disposed.'};
     if(this._people.length>=128)return {ok:false,message:'Population limit reached (128 people).'};

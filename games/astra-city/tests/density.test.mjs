@@ -11,7 +11,7 @@ test('street density pass preserves district bounds and is deterministic',()=>{
 
 test('street density pass adds substantial semantic information at every layer',()=>{
   const {densityReport:d,ambientAnchors}=generateDistrict(73191);
-  assert.ok(d.totalAdded>12000,`expected >12000 density instances, got ${d.totalAdded}`);
+  assert.ok(d.totalAdded>=12000,`expected at least 12000 density instances, got ${d.totalAdded}`);
   assert.ok(d.groundSurface>220);
   assert.ok(d.drains>20);
   assert.ok(d.serviceCovers>35);

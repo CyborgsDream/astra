@@ -189,39 +189,54 @@ function humanoid(a, rng, riding = false) {
     add('body','box',0,1.4,-.03,.39,.10,.31,[.59,.43,.29],5);
     add('body','box',.105,1.18,-.152,.10,.35,.024,[.59,.43,.29],5,2);
   }
+  if(a.activity?.type==='carry'||a.activity?.type==='delivery')h.accessories.push(part(a,'box',0,.93,-.38,.47,.34,.40,[.58,.43,.25],4,2));
+  else if(a.activity?.type==='maintenance'){h.accessories.push(part(a,'box',.25,.43,-.24,.28,.19,.22,[.74,.48,.14],1,2));h.accessories.push(part(a,'cylinder',-.19,.44,-.30,.05,.48,.05,METAL,1,2,0,0,.9));}
+  else if(a.activity?.type==='sit')h.accessories.push(part(a,'box',.18,.72,-.28,.30,.20,.25,[.18,.25,.24],5,2));
   a.human = h;
 }
 
-function poseHuman(a, time) {
-  const h = a.human, crouch = a.id === 'rescue' ? .35 : 0;
-  const moving = clamp(a.speed / 1.6,0,1), phase = a.walkPhase;
-  const bob = Math.sin(phase*2) * .018 * moving + Math.sin(time*1.55+a.phase)*.006;
-  for (const p of h.body) local(a,p,p.x,p.y+bob-crouch,p.z);
-  for (const p of h.head) local(a,p,p.x,p.y+bob-crouch,p.z);
-  for (const arm of h.arms) {
-    const side = arm.side, swing = Math.sin(phase+(side<0?Math.PI:0))*.40*moving;
-    let ex=side*.29, ey=1.10+bob-crouch, ez=Math.sin(swing)*.29;
-    let hx=side*.29, hy=.865+bob-crouch, hz=Math.sin(swing)*.52-.015;
-    if (h.riding) { ey=1.16; ez=-.25; hy=1.11; hz=-.49; hx=side*.31; }
-    else if (crouch) { ey=.79; ez=-.20; hy=.64; hz=-.26; }
-    else if (a.authored && a.role==='vendor' && side>0) { ey=1.15+bob; ez=-.09; hy=1.06+bob+Math.sin(time*.8)*.025; hz=-.28; }
-    limb(a,arm.upper,side*.255,1.375+bob-crouch,0,ex,ey,ez);
-    limb(a,arm.lower,ex,ey,ez,hx,hy,hz);
-    local(a,arm.hand,hx,hy-.04,hz);
+function poseHuman(a,time){
+  const h=a.human,activity=a.activity?.type||'',sitting=activity==='sit',working=activity==='maintenance';
+  const crouch=a.id==='rescue'?.35:working?.18:0,seat=sitting?.54:0;
+  const moving=a.ambient?0:clamp(a.speed/1.6,0,1),phase=a.walkPhase;
+  const bob=Math.sin(phase*2)*.018*moving+Math.sin(time*1.55+a.phase)*.006*(sitting?.35:1);
+  for(const part of h.body)local(a,part,part.x,part.y+bob-crouch-seat,part.z);
+  for(const part of h.head)local(a,part,part.x,part.y+bob-crouch-seat,part.z);
+  for(const arm of h.arms){
+    const side=arm.side,swing=Math.sin(phase+(side<0?Math.PI:0))*.40*moving;
+    let ex=side*.29,ey=1.10+bob-crouch-seat,ez=Math.sin(swing)*.29;
+    let hx=side*.29,hy=.865+bob-crouch-seat,hz=Math.sin(swing)*.52-.015;
+    if(h.riding){ey=1.16;ez=-.25;hy=1.11;hz=-.49;hx=side*.31;}
+    else if(sitting){ey=.68+bob;ez=-.26;hy=.60+bob;hz=-.42;}
+    else if(activity==='carry'||activity==='delivery'){ey=1.03+bob;ez=-.23;hy=.92+bob;hz=-.42;hx=side*.22;}
+    else if(activity==='browse'||activity==='display'){
+      if(side>0){ey=1.18+bob;ez=-.08;hy=1.18+bob+Math.sin(time*.8+a.phase)*.035;hz=-.31;}
+    }else if(activity==='talk'){
+      if(side>0){ey=1.16+bob;ez=-.05;hy=1.02+bob+Math.sin(time*1.15+a.phase)*.08;hz=-.30;}
+    }else if(working){ey=.77;ez=-.24;hy=.57;hz=-.35;}
+    else if(crouch){ey=.79;ez=-.20;hy=.64;hz=-.26;}
+    else if(a.authored&&a.role==='vendor'&&side>0){ey=1.15+bob;ez=-.09;hy=1.06+bob+Math.sin(time*.8)*.025;hz=-.28;}
+    limb(a,arm.upper,side*.255,1.375+bob-crouch-seat,0,ex,ey,ez);
+    limb(a,arm.lower,ex,ey,ez,hx,hy,hz);local(a,arm.hand,hx,hy-.04,hz);
   }
-  for (const leg of h.legs) {
-    const side=leg.side, swing=Math.sin(phase+(side<0?0:Math.PI))*.58*moving;
+  for(const leg of h.legs){
+    const side=leg.side,swing=Math.sin(phase+(side<0?0:Math.PI))*.58*moving;
     const kneeBend=Math.max(0,-Math.sin(phase+(side<0?0:Math.PI)))*.55*moving;
-    let ky=.47-Math.abs(Math.sin(swing))*.035, kz=-Math.sin(swing)*.34;
-    let fy=.09+Math.max(0,Math.sin(phase+(side<0?0:Math.PI)))*.09*moving, fz=kz-Math.sin(swing+kneeBend)*.30;
-    if (h.riding) { ky=.61; kz=-.24; fy=.44; fz=-.18; }
-    else if (crouch) { ky=.29; kz=-.27; fy=.09; fz=-.13; }
-    limb(a,leg.upper,side*.106,.825+bob-crouch,0,side*.115,ky,kz);
-    limb(a,leg.lower,side*.115,ky,kz,side*.118,fy,fz);
-    local(a,leg.shoe,side*.118,fy-.029,fz-.065);
+    let ky=.47-Math.abs(Math.sin(swing))*.035,kz=-Math.sin(swing)*.34;
+    let fy=.09+Math.max(0,Math.sin(phase+(side<0?0:Math.PI)))*.09*moving,fz=kz-Math.sin(swing+kneeBend)*.30;
+    if(h.riding){ky=.61;kz=-.24;fy=.44;fz=-.18;}
+    else if(sitting){ky=.28;kz=-.39;fy=.08;fz=-.68;}
+    else if(crouch){ky=.29;kz=-.27;fy=.09;fz=-.13;}
+    limb(a,leg.upper,side*.106,.825+bob-crouch-seat,0,side*.115,ky,kz);
+    limb(a,leg.lower,side*.115,ky,kz,side*.118,fy,fz);local(a,leg.shoe,side*.118,fy-.029,fz-.065);
+  }
+  for(const part of h.accessories||[]){
+    if(activity==='carry'||activity==='delivery')local(a,part,part.x,.93+bob,part.z);
+    else if(activity==='maintenance')local(a,part,part.x,.43,part.z);
+    else if(activity==='sit')local(a,part,part.x,.72+bob,part.z);
+    else local(a,part);
   }
 }
-
 function roadVehicle(a, rng) {
   const paint = [[.21,.37,.37],[.65,.49,.26],[.34,.39,.43],[.61,.26,.16],[.70,.71,.65],[.16,.24,.31]][Math.floor(rng()*6)];
   const add=(...args)=>part(a,...args);
@@ -314,7 +329,7 @@ export class Population {
   constructor(world = {}, seed = world?.seed ?? 73191) {
     world = world && typeof world==='object' ? world : {};
     this.seed = seed; this.time = 0; this.disposed = false; this._random = random(seed);
-    this._actors=[]; this._people=[]; this._traffic=[]; this._authored=[]; this._instances=[];
+    this._actors=[]; this._people=[]; this._traffic=[]; this._authored=[]; this._ambient=[]; this._instances=[];
     this._player = isPoint(world.spawn?.position) ? [...world.spawn.position] : [0,0,0];
     this._environment={hour:10,weather:'clear'};
     this._foot=suppliedGraph(world,'foot'); this._road=suppliedGraph(world,'road'); this._air=suppliedGraph(world,'air');
@@ -332,6 +347,14 @@ export class Population {
       const near=nearest(this._foot,a.position), p=near>=0?this._foot.nodes[near].p:this._player;
       a.yaw=Math.atan2(a.position[0]-p[0],a.position[2]-p[2]); a.restYaw=a.yaw;
       humanoid(a,this._random); this._people.push(a);this._authored.push(a);
+    }
+    for(const source of Array.isArray(world.ambientAnchors)?world.ambientAnchors:[]) {
+      if(!source||!isPoint(source.position))continue;
+      const role=Object.prototype.hasOwnProperty.call(CLOTHES,source.role)?source.role:'resident';
+      const a=this._base(source.id||`ambient-${this._ambient.length}`,'npc',role);
+      a.ambient=true;a.activity={type:source.type||'wait'};a.position=[...source.position];a.home=[...source.position];
+      a.yaw=Number.isFinite(source.yaw)?source.yaw:0;a.restYaw=a.yaw;a.name=`${role} · ${a.activity.type}`;
+      humanoid(a,this._random);this._people.push(a);this._ambient.push(a);
     }
     const humanCount=this._foot.edges.length ? clamp(Math.floor(this._foot.totalLength/5),8,48) : 0;
     for(let i=0;i<humanCount;i++) {
@@ -526,13 +549,17 @@ export class Population {
         const dx=this._player[0]-a.position[0],dz=this._player[2]-a.position[2];
         const desired=a.range<7?Math.atan2(-dx,-dz):a.restYaw+Math.sin(this.time*.22+a.phase)*.13;
         a.yaw=turn(a.yaw,desired,step*1.7);
+      } else if(a.ambient) {
+        a.speed=0;
+        const activeGesture=['talk','browse','display'].includes(a.activity?.type);
+        a.yaw=turn(a.yaw,a.restYaw+(activeGesture?Math.sin(this.time*.25+a.phase)*.055:0),step*.8);
       } else if(a.rail)this._moveTram(a,step);else this._move(a,step);
       this._pose(a);
     }
     this._collect();
   }
   instances() { return this._instances; }
-  getStats() { return {npcCount:this._people.length,trafficCount:this._traffic.length}; }
+  getStats() { return {npcCount:this._people.length,trafficCount:this._traffic.length,ambientCount:this._ambient.length,ambientActivities:[...new Set(this._ambient.map(a=>a.activity?.type).filter(Boolean))]}; }
   spawn(role='resident',position=this._player) {
     if(this.disposed)return {ok:false,message:'Population is disposed.'};
     if(this._people.length>=128)return {ok:false,message:'Population limit reached (128 people).'};
@@ -562,7 +589,7 @@ export class Population {
   dispose() {
     if(this.disposed)return;this.disposed=true;
     for(const a of this._actors){a.parts.length=0;a.path.length=0;}
-    this._actors.length=0;this._people.length=0;this._traffic.length=0;this._authored.length=0;this._instances.length=0;this._targets.length=0;this._anchors={};
+    this._actors.length=0;this._people.length=0;this._traffic.length=0;this._authored.length=0;this._ambient.length=0;this._instances.length=0;this._targets.length=0;this._anchors={};
     this._foot=null;this._road=null;this._air=null;
   }
 }

@@ -23,3 +23,18 @@ test('street density pass adds substantial semantic information at every layer',
   const types=new Set(ambientAnchors.map(a=>a.type));
   for(const type of ['sit','talk','browse','wait','delivery','maintenance','carry','display','rest'])assert.ok(types.has(type),`missing ambient activity ${type}`);
 });
+
+test('population realizes ambient micro-activity without navigation overhead',()=>{
+  const world=generateDistrict(73191);
+  return import('../src/world/population.js').then(({Population})=>{
+    const population=new Population(world,world.seed);
+    population.update(.16,{position:world.spawn.position},{hour:15.5,weather:'clear'});
+    const stats=population.getStats();
+    assert.equal(stats.ambientCount,world.ambientAnchors.length);
+    assert.ok(stats.ambientActivities.length>=8);
+    assert.ok(population.instances().length>0);
+    const nearby=population.nearby([-5,0,2.5],12);
+    assert.ok(nearby.some(a=>a.id?.startsWith('ambient-')));
+    population.dispose();
+  });
+});

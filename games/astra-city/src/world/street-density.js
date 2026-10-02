@@ -196,6 +196,7 @@ export function applyStreetDensity(api){
   }
 
   for(const plot of plots){
+    if(!plot||![plot.x,plot.z,plot.w,plot.d,plot.height].every(Number.isFinite))continue;
     const r=random(hash(seed,'plot-density',plot.id));
     for(const side of['north','south','east','west'])facadeHistory(plot,side,r);
     frontLife(plot,r);backService(plot,r);roofHistory(plot,r);

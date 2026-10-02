@@ -582,7 +582,7 @@ export function generateDistrict(seed = 73191) {
       box(x+q,y+h-.3,z,1.5,.12,.23,C.cream,6,1,{emissive:.5});
       rod([x+q,y+h-.18,z-d/2+.25],[x+q,y+h-.18,z+d/2-.25],.03,C.rubber,2);
     }
-    occupiedPlots.push({id,rect:footprint(x,z,w,d),height:y+h,front:doors[0]?.side||'east',interior:true});
+    occupiedPlots.push({id,rect:footprint(x,z,w,d),height:y+h,h:y+h,x,z,w,d,floorH:h,color,front:doors[0]?.side||'east',era:Math.floor(random(hash(seed,id,'era'))()*4),interior:true});
     return b;
   }
 

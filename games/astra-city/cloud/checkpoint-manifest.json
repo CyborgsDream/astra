@@ -80,11 +80,20 @@
       "filename": "ASTRA_CITY_checkpoint_20261002_1842_m4_release_1_1_0.zip",
       "sourceCommit": "49fcbc0599e0b2ed1acccfbfa7565486858cca71",
       "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1842_m4_release_1_1_0.zip",
-      "status": "local",
-      "includesWorkingTree": true
+      "status": "archived",
+      "includesWorkingTree": true,
+      "archive": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1842_m4_release_1_1_0.zip",
+      "bytes": 5081060,
+      "files": 85,
+      "sha256": "89f81a7fe6f83f0c6420207f40077d38021cf71d3fa957d5c1c08f920c267fa8",
+      "integrity": "passed",
+      "driveFileId": "1on0KnoreCi4aSoVAU3JJDCsCbpKbpcwV",
+      "driveUrl": "https://drive.google.com/file/d/1on0KnoreCi4aSoVAU3JJDCsCbpKbpcwV/view?usp=drivesdk",
+      "githubCommit": "ccdae89f9af99276751357b02c742a2587df9417",
+      "githubBranch": "releases/astra-city-1.1.0-20261002"
     }
   ],
-  "updatedAt": "2026-10-02T16:42:09.776Z",
+  "updatedAt": "2026-10-02T16:49:05.488575+00:00",
   "sourceDirectory": "games/astra-city",
   "stateFileIds": {
     "PROJECT_STATE.md": "1Z2tYiO2RRbhOcR7Jal1b-gY8HSqLFAdF",
@@ -114,7 +123,18 @@
     "publishedAt": "2026-10-02T16:41:05.272998+00:00",
     "deploymentId": "appgdep_6abfde9025e08191b11746b7af11c786",
     "siteVersionId": "appgprj_6abfb927f728819192c2af12e719370e~appgver_d35dfc0811f08191973c14eecfc1dd32",
-    "publishedSourceCommit": "3156c9f44971f509163f676e1880e584ae6c207c"
+    "publishedSourceCommit": "3156c9f44971f509163f676e1880e584ae6c207c",
+    "archiveFileId": "1on0KnoreCi4aSoVAU3JJDCsCbpKbpcwV",
+    "archiveUrl": "https://drive.google.com/file/d/1on0KnoreCi4aSoVAU3JJDCsCbpKbpcwV/view?usp=drivesdk",
+    "archiveSha256": "89f81a7fe6f83f0c6420207f40077d38021cf71d3fa957d5c1c08f920c267fa8",
+    "githubCommit": "ccdae89f9af99276751357b02c742a2587df9417",
+    "githubCommitUrl": "https://github.com/CyborgsDream/astra/commit/ccdae89f9af99276751357b02c742a2587df9417",
+    "verificationStatus": "passed",
+    "report": {
+      "id": "10v7KF_XkkWcgTk7zSJD4bWfZAU66Viky8oq0okXi-18",
+      "url": "https://docs.google.com/document/d/10v7KF_XkkWcgTk7zSJD4bWfZAU66Viky8oq0okXi-18/edit",
+      "title": "ASTRA CITY \u2014 Recovery and release report \u00b7 1.1.0"
+    }
   },
   "sourceBranch": "releases/astra-city-1.1.0-20261002",
   "sourceDirectoryUrl": "https://github.com/CyborgsDream/astra/tree/releases/astra-city-1.1.0-20261002/games/astra-city"

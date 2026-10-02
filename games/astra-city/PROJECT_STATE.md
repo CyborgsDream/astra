@@ -5,8 +5,9 @@ Updated: 2026-10-02. Published release: **1.1.0 · Switchback Ward**.
 ## Recovery and durable sources
 
 - Playable Site: https://astra-city-switchback.azurion.chatgpt.site . It retains its existing private audience. Version 1.1.0 was published successfully on 2026-10-02.
-- Public source: https://github.com/CyborgsDream/astra/tree/releases/astra-city-1.1.0-20261002/games/astra-city . The final release follows verified gameplay milestone `6045ba0f1cf57330cc744ec2c6e6e18e48cda2fa`; the branch contains its source and test evidence. The original `experiments/player-editor-001` is preserved.
-- Drive checkpoints: https://drive.google.com/drive/folders/1IrebhwrQ4MianlKJ_JMglHKZRvxwaMyc . Milestones 1, 2 and 3 and the six recovery files are verified there.
+- Public source: https://github.com/CyborgsDream/astra/tree/releases/astra-city-1.1.0-20261002/games/astra-city . Final release commit: `ccdae89f9af99276751357b02c742a2587df9417`. The branch contains verified source and test evidence. The original `experiments/player-editor-001` is preserved.
+- Drive checkpoints: https://drive.google.com/drive/folders/1IrebhwrQ4MianlKJ_JMglHKZRvxwaMyc . Milestones 1, 2, 3 and 4 and the six recovery files are verified there. The final complete source ZIP is `ASTRA_CITY_checkpoint_20261002_1842_m4_release_1_1_0.zip`.
+- Release report: https://docs.google.com/document/d/10v7KF_XkkWcgTk7zSJD4bWfZAU66Viky8oq0okXi-18/edit .
 - Recovered Site source commit: `0bf5e486b014e0b8991ec95dd23373a454ab36c6`.
 
 ## Last verified build
@@ -21,7 +22,7 @@ Updated: 2026-10-02. Published release: **1.1.0 · Switchback Ward**.
 
 ## Current task
 
-Version 1.1.0 is published. Implementation and the planned local verification are complete. The exact publication receipt is saved in cloud/publication-receipt.json. Final archive and report receipts are recorded in the cloud manifest and release records as those external operations complete. Utility rods meet their authored endpoints. A compact permanent facade layer preserves distant glazing and sparse bands, and Scales Exchange has real upper windows. The permanent layer contains 5,334 objects (9.23%); nine of sixteen cells retain full detail. Transit remains opaque until a frame using destination geometry has completed.
+Version 1.1.0 is published and archived, with verified source committed and a native release report saved. Implementation and the planned local verification are complete. The exact publication receipt is saved in cloud/publication-receipt.json; final source, archive and report references are in cloud/checkpoint-manifest.json. Utility rods meet their authored endpoints. A compact permanent facade layer preserves distant glazing and sparse bands, and Scales Exchange has real upper windows. The permanent layer contains 5,334 objects (9.23%); nine of sixteen cells retain full detail. Transit remains opaque until a frame using destination geometry has completed.
 
 The public repository received additional commits during verification. The tested release is isolated on `releases/astra-city-1.1.0-20261002`, preserving the actively changing main branch. The earlier CI workflow and immediate relocation scheduling are retained, with nearest-cell coverage. Later street-density and ambient-activity work remains on main for separate reconciliation; it was not overwritten or silently imported.
 

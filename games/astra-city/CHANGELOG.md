@@ -5,6 +5,7 @@
 - Published the verified Switchback Ward build successfully to the existing private Site.
 - Preserved exact pushed source and deployment identifiers in cloud/publication-receipt.json.
 - Included final native capture evidence, six street screenshots and the updated recovery documentation.
+- Committed the final release as `ccdae89f9af99276751357b02c742a2587df9417`, archived milestone 4 with all source and built assets, and saved the native release report.
 
 ## 2026-10-02 — Final visual verification
 

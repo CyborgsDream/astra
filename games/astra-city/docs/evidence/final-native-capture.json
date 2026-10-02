@@ -1,17 +1,34 @@
 {
-  "version": "1.1.0",
-  "date": "2026-10-02",
-  "backend": "WebGPU",
-  "adapter": "google / swiftshader",
-  "environment": "Chromium 153.0.8010.0; SwiftShader Vulkan software adapter; 1280 x 720; medium; 4x MSAA",
-  "scope": "Final native street captures after all runtime and world changes. Software GPU timings are not physical-device performance claims.",
-  "passed": true,
   "errors": [],
-  "worldInstances": 57793,
-  "globalInstances": 5334,
+  "relocations": {
+    "teleport": {
+      "immediate": true,
+      "settled": true
+    },
+    "newGame": {
+      "immediate": true,
+      "position": [
+        -21.8,
+        0,
+        -22.35
+      ],
+      "settled": true
+    },
+    "recovery": {
+      "immediate": true,
+      "settled": true
+    }
+  },
   "views": [
     {
       "id": "market-diagonal",
+      "position": [
+        -20.8,
+        0,
+        -13
+      ],
+      "yaw": -2.331809,
+      "pitch": 0.115,
       "stats": {
         "backend": "WebGPU",
         "frameMs": 715.2000000011176,
@@ -77,6 +94,13 @@
     },
     {
       "id": "market-reverse",
+      "position": [
+        -9.8,
+        0,
+        7.7
+      ],
+      "yaw": 0.346647,
+      "pitch": 0.065,
       "stats": {
         "backend": "WebGPU",
         "frameMs": 1913.4000000003725,
@@ -142,6 +166,13 @@
     },
     {
       "id": "freight-street",
+      "position": [
+        -53,
+        0,
+        -26
+      ],
+      "yaw": -1.61017,
+      "pitch": 0.055,
       "stats": {
         "backend": "WebGPU",
         "frameMs": 2241.5999999996275,
@@ -207,6 +238,13 @@
     },
     {
       "id": "silt-yard",
+      "position": [
+        62.5,
+        0,
+        -27.8
+      ],
+      "yaw": 0,
+      "pitch": 0.08,
       "stats": {
         "backend": "WebGPU",
         "frameMs": 2059.5999999996275,
@@ -272,6 +310,13 @@
     },
     {
       "id": "station-layers",
+      "position": [
+        16.5,
+        0,
+        23.8
+      ],
+      "yaw": -3.087159,
+      "pitch": 0.2,
       "stats": {
         "backend": "WebGPU",
         "frameMs": 1269.300000000745,
@@ -337,6 +382,13 @@
     },
     {
       "id": "western-roofs",
+      "position": [
+        -28,
+        0,
+        24
+      ],
+      "yaw": 1.735945,
+      "pitch": 0.16,
       "stats": {
         "backend": "WebGPU",
         "frameMs": 1890.699999999255,
@@ -400,5 +452,6 @@
       },
       "errors": []
     }
-  ]
+  ],
+  "passed": true
 }

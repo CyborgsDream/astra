@@ -8,8 +8,8 @@ The default seed is `73191`. The current generated district contains:
 
 | World asset | Count |
 | --- | ---: |
-| Static geometry instances | 57,533 |
-| Colliders | 1,236 |
+| Static geometry instances | 57,793 |
+| Colliders | 1,276 |
 | Traversable ramps | 9 |
 | Interactables | 31 |
 | Named locations | 12 |
@@ -31,7 +31,7 @@ These are generated-world counts. Renderer instance totals also include dynamic 
 | `src/ui/ui.js`, `style.css` | Menu, HUD, map, journal, inventory, dialogue, circuit puzzle, settings, and diagnostics |
 | `src/main.js` | Coordinate the frame loop, interaction rules, repairs, travel, save checkpoints, state-to-world synchronization, and ending presentation |
 
-World generation runs once in a persistent worker. It sends a structural manifest and supplies detailed cells on demand. The main thread retains nine detailed cells, permanent structure and compact gameplay/collision/navigation metadata. Selection runs at most four times per second, with hysteresis and one outstanding request of at most two cells. The previous detailed set remains visible until its replacement is complete, then the old arrays and graphics buffers are released. Dynamic buffers update only when the renderer can submit a frame. The HUD, projected markers, and menus use DOM and 2D canvas independently of the WebGPU scene.
+World generation runs once in a persistent worker. It sends a structural manifest and supplies detailed cells on demand. The main thread retains nine detailed cells, permanent structure and coarse facade glazing/bands and compact gameplay/collision/navigation metadata. Selection runs at most four times per second, with hysteresis and one outstanding request of at most two cells. The previous detailed set remains visible until its replacement is complete, then the old arrays and graphics buffers are released. Dynamic buffers update only when the renderer can submit a frame. The HUD, projected markers, and menus use DOM and 2D canvas independently of the WebGPU scene.
 
 ## Rendering pipeline
 
@@ -77,7 +77,7 @@ F3 exposes live measurements. Frame intervals summarize completed GPU work over 
 
 ## Deliberate limits
 
-- **The finite authored district remains in the generation worker.** Main-thread and GPU detail residency is bounded to nine cells and supports actual asynchronous eviction. This version does not fetch cells from a network service or generate an unbounded city. Permanent structure and collision/navigation metadata remain available throughout the district.
+- **The finite authored district remains in the generation worker.** Main-thread and GPU detail residency is bounded to nine cells and supports actual asynchronous eviction. This version does not fetch cells from a network service or generate an unbounded city. Permanent structure, coarse facades and collision/navigation metadata remain available throughout the district.
 - **Lighting uses one directional shadow map.** There are no cascaded shadow maps. Shadow coverage and detail are bounded around the camera, with quality-dependent resolution and reach.
 - **There is no SSR or SSAO.** Reflective materials use the analytical sky rather than screen-space scene reflections. Material shading includes local procedural variation, not a screen-space ambient-occlusion pass. There is no ray tracing or global-illumination system.
 - **The visual world is built from procedural primitives.** It aims for a consistent illustrated city style, without claims of photorealism. Some facades are scenery; the authored interiors and routes define the playable spaces.

@@ -62,11 +62,29 @@
       "filename": "ASTRA_CITY_checkpoint_20261002_1820_m3_verified_play.zip",
       "sourceCommit": "02964cf313609dd12a5d68bed6e22709e7e2b1cd",
       "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1820_m3_verified_play.zip",
+      "status": "archived",
+      "includesWorkingTree": true,
+      "archive": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1820_m3_verified_play.zip",
+      "bytes": 1272271,
+      "files": 75,
+      "sha256": "1699dec80ed416a84183eabfa28cbe258045b20023538aea3f7cdc4ad347afd2",
+      "integrity": "passed",
+      "driveFileId": "1rDO4o3LWlpu2iXPwJC2KX3AUuRiu5NGB",
+      "driveUrl": "https://drive.google.com/file/d/1rDO4o3LWlpu2iXPwJC2KX3AUuRiu5NGB/view?usp=drivesdk",
+      "githubCommit": "6045ba0f1cf57330cc744ec2c6e6e18e48cda2fa",
+      "githubBranch": "releases/astra-city-1.1.0-20261002"
+    },
+    {
+      "milestone": "m4_release_1_1_0",
+      "createdAt": "2026-10-02T16:42:09.776Z",
+      "filename": "ASTRA_CITY_checkpoint_20261002_1842_m4_release_1_1_0.zip",
+      "sourceCommit": "49fcbc0599e0b2ed1acccfbfa7565486858cca71",
+      "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1842_m4_release_1_1_0.zip",
       "status": "local",
       "includesWorkingTree": true
     }
   ],
-  "updatedAt": "2026-10-02T16:20:12.883Z",
+  "updatedAt": "2026-10-02T16:42:09.776Z",
   "sourceDirectory": "games/astra-city",
   "stateFileIds": {
     "PROJECT_STATE.md": "1Z2tYiO2RRbhOcR7Jal1b-gY8HSqLFAdF",
@@ -78,13 +96,26 @@
   },
   "release": {
     "version": "1.1.0",
-    "status": "verification",
+    "status": "published",
     "sourceDirectory": "games/astra-city",
     "playUrl": "https://astra-city-switchback.azurion.chatgpt.site",
     "verificationDate": "2026-10-02",
     "mainBrowser": "passed",
     "mechanicalTrips": 8,
-    "unitTests": 71,
-    "remainingGate": "Rod-transform repair and coarse architectural detail in streamed-out cells, followed by final visual check and publication"
-  }
+    "unitTests": 79,
+    "githubMilestoneCommit": "6045ba0f1cf57330cc744ec2c6e6e18e48cda2fa",
+    "concurrentMainPreserved": true,
+    "finalNativeViews": 6,
+    "immediateRelocationChecks": 3,
+    "worldInstances": 57793,
+    "globalInstances": 5334,
+    "colliders": 1276,
+    "standaloneBytes": 387699,
+    "publishedAt": "2026-10-02T16:41:05.272998+00:00",
+    "deploymentId": "appgdep_6abfde9025e08191b11746b7af11c786",
+    "siteVersionId": "appgprj_6abfb927f728819192c2af12e719370e~appgver_d35dfc0811f08191973c14eecfc1dd32",
+    "publishedSourceCommit": "3156c9f44971f509163f676e1880e584ae6c207c"
+  },
+  "sourceBranch": "releases/astra-city-1.1.0-20261002",
+  "sourceDirectoryUrl": "https://github.com/CyborgsDream/astra/tree/releases/astra-city-1.1.0-20261002/games/astra-city"
 }

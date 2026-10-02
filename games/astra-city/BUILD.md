@@ -2,6 +2,17 @@
 
 Use Node 24 or a compatible supported Node release. Run commands from the directory containing package.json: `games/astra-city` in the public repository, or `astra-city` after extracting a checkpoint.
 
+## Source branch
+
+The verified 1.1.0 release uses `releases/astra-city-1.1.0-20261002`. After cloning the existing ASTRA repository:
+
+```bash
+git checkout releases/astra-city-1.1.0-20261002
+cd games/astra-city
+```
+
+Main contains concurrent development and is preserved separately. Checkpoint ZIPs already contain the release source; no branch selection is needed after extraction.
+
 ## Install and play locally
 
 ```bash

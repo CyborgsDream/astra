@@ -96,7 +96,7 @@ The previous valid save is retained as a backup. Version-one records migrate wit
 
 ## Scope and diagnostics
 
-Switchback is a finite district. Its current default world contains 57,533 static geometry instances, 1,236 colliders, nine ramps, 31 interactables, 12 named locations, 16 cells, and 2,345 navigation nodes. Dynamic people, vehicles, and status indicators add their own geometry.
+Switchback is a finite district. Its current default world contains 57,793 static geometry instances, 1,276 colliders, nine ramps, 31 interactables, 12 named locations, 16 cells, and 2,345 navigation nodes. Dynamic people, vehicles, and status indicators add their own geometry.
 
 A persistent worker supplies nine nearby detailed cells, with asynchronous loading and eviction. Main building masses and long structural objects stay resident to preserve the district and skyline. GPU visibility culling then selects the geometry needed by each view. F3 displays completed-frame timing, GPU timing when supported, resident cells, population, geometry and queued frames. F4 exposes free camera, teleport, collision and population overlays, cell boundaries, lighting/material/normal views, mesh edges, detail controls, population spawning and time/weather controls. Performance depends on the actual browser, adapter, resolution, and scene. The project does not make a hardware frame-rate guarantee.
 
@@ -110,4 +110,12 @@ The source is archived at coherent milestones, including this README, all game m
 node tools/checkpoint.mjs milestone_name
 ```
 
-The command creates and verifies a complete ZIP in a neighbouring checkpoints directory. The manifest records source commits, byte hashes and cloud locations. Current source lives in [CyborgsDream/astra](https://github.com/CyborgsDream/astra/tree/main/games/astra-city); archives are in the [ASTRA CITY folder](https://drive.google.com/drive/folders/1IrebhwrQ4MianlKJ_JMglHKZRvxwaMyc).
+The command creates and verifies a complete ZIP in a neighbouring checkpoints directory. The manifest records source commits, byte hashes and cloud locations. Current source lives in [CyborgsDream/astra](https://github.com/CyborgsDream/astra/tree/releases/astra-city-1.1.0-20261002/games/astra-city); archives are in the [ASTRA CITY folder](https://drive.google.com/drive/folders/1IrebhwrQ4MianlKJ_JMglHKZRvxwaMyc).
+
+## Verified source branch
+
+This release is preserved on [`releases/astra-city-1.1.0-20261002`](https://github.com/CyborgsDream/astra/tree/releases/astra-city-1.1.0-20261002/games/astra-city). In a clone of ASTRA, select that branch before entering `games/astra-city`. Concurrent work on main is retained separately.
+
+## Source mirror and complete release archive
+
+This GitHub source mirror excludes generated `dist` output, the Site hosting binding, and image evidence under `docs/images/`. The complete release checkpoint ZIP retains these files, including all six final capture images. Capture paths in the validation documents refer to that complete archive; use the linked ASTRA CITY archive folder above to retrieve them.

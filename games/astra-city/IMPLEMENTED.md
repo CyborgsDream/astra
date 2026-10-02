@@ -19,3 +19,7 @@ Recovered 2026-10-02 from the existing Switchback Ward source. These features ex
 - Population bounds/headings and lighting/normal/material/mesh developer inspection.
 
 Required additions and verification gaps belong in TODO_NEXT.md; a feature is not marked tested here solely because historical reports say it passed.
+
+- Correctly transformed, connected cable and pipe segments, checked against authored endpoints.
+- Permanent coarse facade glazing and sparse floor/roof bands; distant buildings remain articulated after detail eviction.
+- Real upper window openings and exterior articulation on Scales Exchange.

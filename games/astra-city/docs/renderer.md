@@ -104,3 +104,7 @@ Current and historical native WebGPU execution evidence is recorded in `docs/val
 ## Deliberate limits
 
 This is a compact native renderer suitable for the authored district, not a full engine. It has frustum/detail culling rather than GPU occlusion culling, one local directional shadow map, analytic sky reflection rather than ray tracing, procedural material crevice shading rather than a screen-space ambient-occlusion buffer, no point-light array, and no transparency sorting. The rain overlay has no geometry collision and should be suppressed by the owner for sheltered scenes if that distinction is required. A single mesh batch that exceeds the adapter's storage-buffer limit rejects with an explicit error instead of silently dropping instances.
+
+## Coarse architectural layer
+
+The permanent set retains structural masses, window glazing and sparse floor/roof bands, while frames, balconies, utilities and clutter follow detailed-cell residency. Default seed 73191 uses 5,334 permanent objects (9.23% of 57,793) and 52,459 streamable objects. This avoids bare distant towers when their detailed cells are evicted. Rod rotations are checked through the actual instance-packing transform against authored cable, pipe and crossbar endpoints.

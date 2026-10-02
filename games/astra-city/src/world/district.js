@@ -110,7 +110,7 @@ export function generateDistrict(seed = 73191) {
     const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], length = Math.hypot(dx, dy, dz);
     if (length < 0.001) return;
     add('cylinder', [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], [diameter, length, diameter], color, 1, detail,
-      { rotation: [Math.acos(Math.max(-1, Math.min(1, dy / length))), Math.atan2(dx, dz), 0] });
+      { rotation: [Math.atan2(dz, dy), 0, -Math.atan2(dx, Math.hypot(dy, dz))] });
   }
   function cable(a, b, sag = 0.45, diameter = 0.035, detail = 1) {
     let prev = a;
@@ -397,7 +397,7 @@ export function generateDistrict(seed = 73191) {
   const sideYaw=side=>side==='north'?0:side==='east'?Math.PI/2:side==='south'?Math.PI:-Math.PI/2;
   function window(b,side,t,y,w,h,r,lit=false) {
     sideBox(b,side,t,y,w+.24,h+.22,.08,.018,C.darkConcrete,0,1);
-    sideBox(b,side,t,y,w,h,.024,.065,lit?C.warmGlass:tint(C.glass,(r()-.5)*.08),2,1,{emissive:lit?.1:0});
+    sideBox(b,side,t,y,w,h,.024,.065,lit?C.warmGlass:tint(C.glass,(r()-.5)*.08),2,0,{emissive:lit?.1:0,coarseFacade:b.id,coarsePart:'glazing'});
     for(const s of [-1,1]) sideBox(b,side,t+s*(w/2+.035),y,.085,h+.16,.22,.125,pick([C.cream,C.metal,C.darkMetal],r),1,1);
     for(const s of [-1,1]) sideBox(b,side,t,y+s*(h/2+.025),w+.17,.085,.22,.125,C.metal,1,1);
     sideBox(b,side,t,y,w+.06,.055,.18,.15,C.metal,1,1);
@@ -474,10 +474,14 @@ export function generateDistrict(seed = 73191) {
       for(let f=0;f<floors;f++){
         const at=f*floorH,fb=at>=baseH?upper:b,len=horiz?fb.w:fb.d;
         const bays=Math.max(2,Math.floor(len/(2.2+r()*.35))),bayW=len/bays;
+        // Permanent glazing plus a sparse structural rhythm keeps evicted
+        // buildings readable; mullions, balconies and equipment remain streamed.
+        const bandDetail=f%3===0||f===floors-1?0:1;
+        const bandMetadata=bandDetail===0?{coarseFacade:b.id,coarsePart:'band'}:{};
         if(underpass&&!horiz&&at+.14>6.8&&at+.14<14){
-          const south=fb.z-fb.d/2,span=58-south;if(span>.1)sideBox(fb,side,(south+58)/2-fb.z,at+.14,span,.16,.20,.075,tint(col,.06),0,1);
-        }else sideBox(fb,side,0,at+.14,len+.12,.16,.20,.075,tint(col,.06),0,1);
-        if(f===floors-1)sideBox(fb,side,0,Math.min(b.h-.15,at+floorH-.08),len+.3,.2,.4,.12,C.lightConcrete,0,1);
+          const south=fb.z-fb.d/2,span=58-south;if(span>.1)sideBox(fb,side,(south+58)/2-fb.z,at+.14,span,.16,.20,.075,tint(col,.06),0,bandDetail,bandMetadata);
+        }else sideBox(fb,side,0,at+.14,len+.12,.16,.20,.075,tint(col,.06),0,bandDetail,bandMetadata);
+        if(f===floors-1)sideBox(fb,side,0,Math.min(b.h-.15,at+floorH-.08),len+.3,.2,.4,.12,C.lightConcrete,0,0,{coarseFacade:b.id,coarsePart:'band'});
         for(let j=0;j<bays;j++){
           const t=-len/2+bayW*(j+.5),wy=at+floorH*.54;
           if(underpass&&!horiz&&wy-1<14&&wy+1>6.8&&fb.z+t>57.1&&fb.z+t<65.0)continue;
@@ -485,13 +489,13 @@ export function generateDistrict(seed = 73191) {
             sideBox(fb,side,t,1.32,bayW-.35,2.46,.10,.12,C.darkMetal,1,1);
             const shutter=d()<.28;
             if(shutter){for(let k=0;k<12;k++)sideBox(fb,side,t,.27+k*.18,bayW-.42,.14,.045,.19,tint(C.metal,(k%3)*.02),1,2);}
-            else {sideBox(fb,side,t,1.42,bayW-.56,1.9,.025,.185,C.glass,2,1);sideBox(fb,side,t-bayW*.28,1.36,.08,2.2,.13,.23,C.cream,1,1);}
+            else {sideBox(fb,side,t,1.42,bayW-.56,1.9,.025,.185,C.glass,2,0,{coarseFacade:b.id,coarsePart:'glazing'});sideBox(fb,side,t-bayW*.28,1.36,.08,2.2,.13,.23,C.cream,1,1);}
             awning(fb,side,t,2.8,bayW-.05,d,pick(SHOP_NAMES,d));
           }else{
             const ww=Math.min(1.7,bayW*.66),wh=f===0?1.75:1.6;
             if(isTower&&f>=7){
               sideBox(fb,side,t,wy,ww+.18,wh+.2,.12,.06,C.darkConcrete,0,1);
-              sideBox(fb,side,t,wy,ww,wh,.026,.13,tint(C.glass,(r()-.5)*.08),2,1);
+              sideBox(fb,side,t,wy,ww,wh,.026,.13,tint(C.glass,(r()-.5)*.08),2,0,{coarseFacade:b.id,coarsePart:'glazing'});
               sideBox(fb,side,t,wy,ww+.1,.05,.14,.16,C.metal,1,1);
               sideBox(fb,side,t,wy-wh/2-.08,ww+.2,.08,.3,.13,C.lightConcrete,0,1);
             }else window(fb,side,t,wy,ww,wh,r,r()<.12);
@@ -529,8 +533,8 @@ export function generateDistrict(seed = 73191) {
     rod(mast,[mast[0],b.h+3.8+d()*2,mast[2]],.065,C.metal);
     for(let k=0;k<4;k++)rod([mast[0]-.58,b.h+2.6+k*.26,mast[2]],[mast[0]+.58,b.h+2.6+k*.26,mast[2]],.025,C.metal,2);
     for(const s of [-1,1]){
-      box(top.x,b.h+.31,top.z+s*top.d/2,top.w+.15,.62,.18,C.lightConcrete,0,1);
-      box(top.x+s*top.w/2,b.h+.31,top.z,.18,.62,top.d,C.lightConcrete,0,1);
+      box(top.x,b.h+.31,top.z+s*top.d/2,top.w+.15,.62,.18,C.lightConcrete,0,0,{coarseFacade:b.id,coarsePart:'parapet'});
+      box(top.x+s*top.w/2,b.h+.31,top.z,.18,.62,top.d,C.lightConcrete,0,0,{coarseFacade:b.id,coarsePart:'parapet'});
     }
     // A front stair landing / delivery pocket makes each parcel read as an address.
     const len=b.front==='north'||b.front==='south'?b.w:b.d;
@@ -548,7 +552,7 @@ export function generateDistrict(seed = 73191) {
 
   // Hollow room shells: doors are actual omissions in the wall, and roofs are thin floor slabs.
   function room(id,x,z,w,d,y,h,color,doors=[{side:'east',offset:0,width:2.3}],options={}){
-    const b={id,x,z,w,d}; const r=random(hash(seed,id,'room'));
+    const b={id,x,z,w,d}; const r=random(hash(seed,id,'room')),upperRng=random(hash(seed,id,'clerestory'));
     floor(`${id}_floor`,x-w/2,z-d/2,x+w/2,z+d/2,y,.24,options.floorColor||C.lightConcrete,11);
     floor(`${id}_ceiling`,x-w/2-.12,z-d/2-.12,x+w/2+.12,z+d/2+.12,y+h,.22,C.darkConcrete);
     for(const side of ['north','south','east','west']){
@@ -572,13 +576,22 @@ export function generateDistrict(seed = 73191) {
             const p=sidePoint(b,side,t+s*(step/2-.12),y+h/2,0);
             solid(`${id}_${side}_pier_${k}_${s}`,...p,horiz?.24:.28,h,horiz?.28:.24,color,0,0);
           }
-          for(const [cy,ch]of[[bottom/2,bottom],[(top+h)/2,h-top]]){
-            const p=sidePoint(b,side,t,y+cy,0);solid(null,...p,horiz?ww:.28,ch,horiz?.28:ww,color,0,0);
+          const upper=options.clerestory,upperBottom=upper?.bottom,upperTop=upperBottom+(upper?.height||0);
+          const hasUpper=Number.isFinite(upperBottom)&&upperBottom>top+.2&&upperTop<h-.2;
+          const spans=hasUpper?[[0,bottom],[top,upperBottom],[upperTop,h]]:[[0,bottom],[top,h]];
+          for(const [lo,hi]of spans){
+            const p=sidePoint(b,side,t,y+(lo+hi)/2,0);solid(null,...p,horiz?ww:.28,hi-lo,horiz?.28:ww,color,0,0);
           }
           const p=sidePoint(b,side,t,y+bottom+wh/2,-.07);
-          box(...p,horiz?ww:.032,wh,horiz?.032:ww,C.glass,2,1);
+          box(...p,horiz?ww:.032,wh,horiz?.032:ww,C.glass,2,0,{coarseFacade:id,coarsePart:'glazing'});
           collision(null,...p,horiz?ww:.12,wh,horiz?.12:ww);
           window(b,side,t,y+bottom+wh/2,ww-.12,wh-.08,r,false);
+          if(hasUpper){
+            const up=sidePoint(b,side,t,y+(upperBottom+upperTop)/2,-.07),height=upperTop-upperBottom;
+            box(...up,horiz?ww:.032,height,horiz?.032:ww,C.glass,2,0,{coarseFacade:id,coarsePart:'glazing'});
+            collision(`${id}_${side}_clerestory_${k}`,...up,horiz?ww:.12,height,horiz?.12:ww);
+            window(b,side,t,y+(upperBottom+upperTop)/2,ww-.12,height-.08,upperRng,false);
+          }
         }
       }
     }
@@ -902,7 +915,14 @@ export function generateDistrict(seed = 73191) {
   box(-23.26,.034,-19.2,.42,.025,1.45,C.water,9,2,{roughness:.16});
 
   // SCALES EXCHANGE: accessible union hall and archive, with useful commercial depth.
-  const exchange=room('scales_exchange',29,34,16,17,0,12.6,C.teal,[{side:'west',offset:-2,width:2.8},{side:'east',offset:-2,width:2.5}]);
+  const exchange=room('scales_exchange',29,34,16,17,0,12.6,C.teal,[{side:'west',offset:-2,width:2.8},{side:'east',offset:-2,width:2.5}],{clerestory:{bottom:6.6,height:2.25}});
+  // A high daylight band and shallow civic pilasters articulate the single tall
+  // union hall. The existing entrances, counters and open interior stay usable.
+  for(const side of ['north','south','east','west']){
+    const len=side==='north'||side==='south'?exchange.w:exchange.d,bays=Math.max(2,Math.floor(len/2.8));
+    for(const y of [3.55,9.25,12.43])sideBox(exchange,side,0,y,len+.20,.18,.40,.17,C.lightConcrete,0,0,{coarseFacade:exchange.id,coarsePart:'band'});
+    for(let j=0;j<=bays;j++)sideBox(exchange,side,-len/2+j*len/bays,7.95,.18,8.7,.26,.20,C.darkConcrete,0,1);
+  }
   awning(exchange,'west',-2,3.2,5.8,rng,'SCALES / UNION EXCHANGE');
   sign('ORIN / PUBLIC DESK',21.21,2.3,29.0,3.0,.51,-Math.PI/2);
   solid('union_desk',27,.5,30.5,4.7,1.0,1.2,C.wood,4,1);bench(24,0,37.5,Math.PI/2);

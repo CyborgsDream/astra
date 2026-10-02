@@ -1,0 +1,24 @@
+{
+  "version": "1.1.0",
+  "deployment": {
+    "id": "appgdep_6abfde9025e08191b11746b7af11c786",
+    "project_id": "appgprj_6abfb927f728819192c2af12e719370e",
+    "title": "ASTRA CITY \u00b7 Switchback Ward",
+    "version_id": "appgprj_6abfb927f728819192c2af12e719370e~appgver_d35dfc0811f08191973c14eecfc1dd32",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://astra-city-switchback.azurion.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6abfb927f728819192c2af12e719370e",
+    "failure_message": null,
+    "env_set_revision": 0,
+    "updated_at": "2026-10-02T16:41:05.272998+00:00"
+  },
+  "source": {
+    "project_id": "appgprj_6abfb927f728819192c2af12e719370e",
+    "checkout_path": "/workspace/scratch/0e54ad0a22f3/astra-site",
+    "commit_sha": "3156c9f44971f509163f676e1880e584ae6c207c",
+    "archive": "/workspace/scratch/0e54ad0a22f3/site-releases/astra-city-1.1.0.tar.gz"
+  }
+}

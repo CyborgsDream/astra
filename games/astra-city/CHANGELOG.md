@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-02 — Version 1.1.0 published
+
+- Published the verified Switchback Ward build successfully to the existing private Site.
+- Preserved exact pushed source and deployment identifiers in cloud/publication-receipt.json.
+- Included final native capture evidence, six street screenshots and the updated recovery documentation.
+
+## 2026-10-02 — Final visual verification
+
+- Repaired rod rotations so actual utility cables, support bars and pipes meet their authored endpoints; six new regression tests pass.
+- Retained window glazing and sparse facade/roof bands when distant detail cells are evicted, keeping the permanent layer below 10% of the world.
+- Added real clerestory openings and restrained exterior articulation to the tall Scales Exchange hall.
+- Passed 79 automated tests, district validation, all eight mechanical trips and the five-minute population check. All six final native WebGPU street captures and the three immediate relocation checks passed without browser or renderer errors.
+- Published source milestones on the dedicated release branch while preserving continuing main-branch development.
+
 ## 2026-10-02 — Milestone 3 · Integrated play and recovery verified
 
 - Passed all eight mechanical interactions and deliberately delayed transit-cell arrival in native WebGPU.

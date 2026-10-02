@@ -1,7 +1,5 @@
-import {readFile} from 'fs/promises';
 import {createHash} from 'crypto';
-const source=await readFile(new URL('../src/world/district.js',import.meta.url),'utf8');
-const {generateDistrict}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+import {generateDistrict} from '../src/world/district.js';
 const required=['mara','ivo','sana','orin','relay','pump','cache','archive','clinic_drop','market_drop','rooftop_drop','rescue','home','workshop','kiosk','scooter','transit_market','transit_works','transit_roof','lift_ground','lift_roof','garden','memorial','grid_switch','service_door','rooftop_ladder'];
 const radius=.32,height=1.76;
 function blockers(w,p){return w.colliders.filter(c=>c.type!=='door'&&c.max[1]>p[1]+.42&&c.min[1]<p[1]+height-.015&&p[0]>c.min[0]-radius+.006&&p[0]<c.max[0]+radius-.006&&p[2]>c.min[2]-radius+.006&&p[2]<c.max[2]+radius-.006);}
@@ -28,6 +26,6 @@ const hashWorld=x=>createHash('sha256').update(JSON.stringify({instances:x.insta
 const deterministic=hashWorld(w)===hashWorld(generateDistrict(testSeed));
 const tramRouteValid=Array.isArray(w.tramRoute?.points)&&w.tramRoute.points.length>=2&&w.tramRoute.points.every(p=>p.length===3&&p.every(Number.isFinite)&&Math.abs(p[1]-8.4)<.001&&Math.abs(p[2]-61)<.001)&&w.tramRoute.stops.some(p=>Math.abs(p[0]-13)<.001);
 const doorOwnershipValid=w.instances.filter(i=>i.owner==='service_door').length===1&&w.colliders.some(c=>c.type==='door'&&c.owner==='service_door');
-const report={seed:w.seed,name:w.name,generationMs:Math.round(generationMs),validationMs:Math.round(performance.now()-start),instances:w.instances.length,colliders:w.colliders.length,ramps:w.ramps.length,targets:w.interactables.length,signs:w.signs.length,locations:w.locations.length,cells:w.cells.length,nodes:w.navNodes.length,edges:w.navEdges.length,badTransforms:badTransforms.length,blockedTargets,unsupportedTargets,missing,disconnected,rampIssues,walkIssues,unsupportedWalk,deterministic,tramRouteValid,doorOwnershipValid,spawn:w.spawn,tramRoute:w.tramRoute};
+const report={seed:w.seed,name:w.name,generationMs:Math.round(generationMs),validationMs:Math.round(performance.now()-start),instances:w.instances.length,colliders:w.colliders.length,ramps:w.ramps.length,targets:w.interactables.length,signs:w.signs.length,locations:w.locations.length,cells:w.cells.length,nodes:w.navNodes.length,edges:w.navEdges.length,density:w.densityReport,ambientAnchors:w.ambientAnchors?.length||0,badTransforms:badTransforms.length,blockedTargets,unsupportedTargets,missing,disconnected,rampIssues,walkIssues,unsupportedWalk,deterministic,tramRouteValid,doorOwnershipValid,spawn:w.spawn,tramRoute:w.tramRoute};
 console.log(JSON.stringify(report,null,2));
 if(badTransforms.length||blockedTargets.length||unsupportedTargets.length||missing.length||disconnected.length||rampIssues.length||walkIssues.length||unsupportedWalk.length||!deterministic||!tramRouteValid||!doorOwnershipValid)process.exitCode=1;

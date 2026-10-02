@@ -1,5 +1,7 @@
 /* Switchback Ward: deterministic, dependency-free architectural world data. */
 
+import {applyStreetDensity} from './street-density.js';
+
 const TAU = Math.PI * 2;
 const C = {
   concrete: [0.49, 0.51, 0.48], lightConcrete: [0.66, 0.66, 0.59], darkConcrete: [0.30, 0.34, 0.33],
@@ -51,7 +53,7 @@ function distSegment(x, z, a, b) {
 
 export function generateDistrict(seed = 73191) {
   seed = Number.isFinite(Number(seed)) ? Number(seed) >>> 0 : 73191;
-  const instances = [], colliders = [], ramps = [], interactables = [], locations = [], navNodes = [], navEdges = [], signs = [], routePaths = [];
+  const instances = [], colliders = [], ramps = [], interactables = [], locations = [], navNodes = [], navEdges = [], signs = [], routePaths = [], ambientAnchors = [];
   const bounds = { minX: -84, maxX: 84, minZ: -72, maxZ: 72 };
   const cells = [];
   for (let z = -2; z <= 1; z++) for (let x = -2; x <= 1; x++) cells.push({ id: `${x},${z}`, x, z, bounds: [x * 48, z * 48, (x + 1) * 48, (z + 1) * 48] });
@@ -378,14 +380,25 @@ export function generateDistrict(seed = 73191) {
   }
   const sideYaw=side=>side==='north'?0:side==='east'?Math.PI/2:side==='south'?Math.PI:-Math.PI/2;
   function window(b,side,t,y,w,h,r,lit=false) {
-    sideBox(b,side,t,y,w+.24,h+.22,.08,.018,C.darkConcrete,0,1);
-    sideBox(b,side,t,y,w,h,.024,.065,lit?C.warmGlass:tint(C.glass,(r()-.5)*.08),2,1,{emissive:lit?.1:0});
-    for(const s of [-1,1]) sideBox(b,side,t+s*(w/2+.035),y,.085,h+.16,.22,.125,pick([C.cream,C.metal,C.darkMetal],r),1,1);
-    for(const s of [-1,1]) sideBox(b,side,t,y+s*(h/2+.025),w+.17,.085,.22,.125,C.metal,1,1);
-    sideBox(b,side,t,y,w+.06,.055,.18,.15,C.metal,1,1);
-    if(r()<.58)sideBox(b,side,t,y,.045,h,.17,.14,C.metal,1,1);
-    sideBox(b,side,t,y-h/2-.105,w+.28,.1,.42,.16,C.lightConcrete,0,1);
-    if(r()<.34)sideBox(b,side,t+w*.24,y,w*.36,h*.92,.025,.086,pick([C.cream,C.teal,C.red],r),5,2);
+    const style=Math.floor(r()*6),frame=pick([C.cream,C.metal,C.darkMetal,C.rust],r),recess=.045+r()*.08;
+    sideBox(b,side,t,y,w+.24,h+.22,.09,.018,C.darkConcrete,0,1);
+    sideBox(b,side,t,y,w,h,.024,recess,lit?C.warmGlass:tint(C.glass,(r()-.5)*.1),2,1,{emissive:lit?.1:0});
+    for(const s of[-1,1])sideBox(b,side,t+s*(w/2+.035),y,.07+r()*.045,h+.16,.20,.125,frame,1,1);
+    for(const s of[-1,1])sideBox(b,side,t,y+s*(h/2+.025),w+.17,.07+r()*.035,.20,.125,frame,1,1);
+    if(style!==4)sideBox(b,side,t,y,w+.06,.045+r()*.035,.16,.15,frame,1,1);
+    if(style===0||style===3)sideBox(b,side,t,y,.04+r()*.035,h,.16,.14,frame,1,1);
+    sideBox(b,side,t,y-h/2-.105,w+.28,.1,.38+r()*.08,.16,pick([C.lightConcrete,C.darkConcrete,C.brick],r),0,1);
+    if(style===1||style===5){
+      const slats=4+Math.floor(r()*4);
+      for(let k=0;k<slats;k++)sideBox(b,side,t,y-h*.32+k*(h*.64/(slats-1)),w*.86,.025,.025,recess+.03,pick([C.cream,C.metal,C.wood],r),1,2);
+    }else if(style===2){
+      for(const s of[-1,1])sideBox(b,side,t+s*w*.25,y,w*.34,h*.9,.018,recess+.035,pick([C.cream,C.teal,C.red,C.yellow],r),5,2);
+    }else if(style===3){
+      sideBox(b,side,t,y+h*.27,w*.82,.035,.028,recess+.04,C.darkMetal,1,2);
+      sideBox(b,side,t,y-h*.22,w*.82,.035,.028,recess+.04,C.darkMetal,1,2);
+    }
+    if(r()<.18)sideBox(b,side,t+w*(r()<.5?-.24:.24),y,w*.42,h*.94,.022,recess+.14,pick([C.cream,C.teal,C.red],r),5,2,{rotation:[0,sideYaw(side)+(r()<.5?-.14:.14),0]});
+    if(r()<.24)sideBox(b,side,t+(r()-.5)*w*.3,y-h*.18,w*.34,h*.28,.018,recess+.06,pick([C.paper,C.cream,C.teal],r),5,2);
   }
   function wallUnit(b,side,t,y,r) {
     const p=sidePoint(b,side,t,y,.42),yaw=sideYaw(side);
@@ -423,7 +436,7 @@ export function generateDistrict(seed = 73191) {
   }
   function building(b) {
     const r=random(hash(seed,b.id,'architecture')),d=random(hash(seed,b.id,'details'));
-    const floorH=b.floorH||3.3,baseH=Math.min(b.h,9.9),isTower=b.h>31;
+    const era=Math.floor(r()*4),floorH=b.floorH||3.3,baseH=Math.min(b.h,9.9),isTower=b.h>31;
     const col=b.color||pick([C.concrete,C.lightConcrete,C.brick,C.teal,C.jade,C.red],r);
     const upperCol=isTower?pick([C.jade,C.paleJade,C.concrete],r):tint(col,(r()-.5)*.09);
     const groundMat=col===C.brick||col===C.red?10:0;
@@ -470,7 +483,7 @@ export function generateDistrict(seed = 73191) {
             else {sideBox(fb,side,t,1.42,bayW-.56,1.9,.025,.185,C.glass,2,1);sideBox(fb,side,t-bayW*.28,1.36,.08,2.2,.13,.23,C.cream,1,1);}
             awning(fb,side,t,2.8,bayW-.05,d,pick(SHOP_NAMES,d));
           }else{
-            const ww=Math.min(1.7,bayW*.66),wh=f===0?1.75:1.6;
+            const ww=Math.min(1.85,bayW*(.48+r()*.28)),wh=(f===0?1.55:1.38)+r()*.42;
             if(isTower&&f>=7){
               sideBox(fb,side,t,wy,ww+.18,wh+.2,.12,.06,C.darkConcrete,0,1);
               sideBox(fb,side,t,wy,ww,wh,.026,.13,tint(C.glass,(r()-.5)*.08),2,1);
@@ -525,7 +538,7 @@ export function generateDistrict(seed = 73191) {
     const back=b.front==='north'?'south':b.front==='south'?'north':b.front==='east'?'west':'east';
     const bp=sidePoint(b,back,-len*.23,0,.75);
     if(!onRoad(bp[0],bp[2],.4)&&!holeAt(bp[0],bp[2],1))binCluster(bp[0],0,bp[2],d);
-    occupiedPlots.push({id:b.id,rect:footprint(b.x,b.z,b.w,b.d),height:b.h,front:b.front});
+    occupiedPlots.push({id:b.id,rect:footprint(b.x,b.z,b.w,b.d),height:b.h,h:b.h,x:b.x,z:b.z,w:b.w,d:b.d,floorH,color:col,front:b.front,era});
   }
 
   // Hollow room shells: doors are actual omissions in the wall, and roofs are thin floor slabs.
@@ -1077,6 +1090,13 @@ export function generateDistrict(seed = 73191) {
   solid('east_canal_outer_wall',94.2,-.4,0,.45,4,154,C.darkConcrete);
   for(let z=-69;z<=70;z+=11.3){rod([87.1,0,z],[89.0,-.9,z],.25,C.rust);weeds(85.25,0,z,rng,5);}
 
+  // Street-level density and realism pass. It adds only instanced/shared visual detail,
+  // leaving collision, authored traversal, mission targets, and district bounds unchanged.
+  const densityReport=applyStreetDensity({
+    seed,instances,roads,plots:occupiedPlots,bounds,colors:C,box,cylinder,sphere,rod,cable,
+    crate,litter,weeds,binCluster,plant,hvac,onRoad,holeAt,ambientAnchors
+  });
+
   // Ground navigation is generated against real colliders, so inhabitants follow usable streets and passages.
   const groundSolids=colliders.filter(c=>c.type!=='door'&&c.min[1]<1.75&&c.max[1]>.28);
   const groundClear=(x,z,r=.36)=>!holeAt(x,z,r+.15)&&!groundSolids.some(c=>x>c.min[0]-r&&x<c.max[0]+r&&z>c.min[2]-r&&z<c.max[2]+r);
@@ -1154,7 +1174,7 @@ export function generateDistrict(seed = 73191) {
   }
 
   return {
-    seed, name: 'Switchback Ward', instances, colliders, ramps, interactables, locations, navNodes, navEdges, roads,
+    seed, name: 'Switchback Ward', instances, colliders, ramps, interactables, locations, navNodes, navEdges, roads, ambientAnchors, densityReport,
     spawn: { position: [-21.8,0,-22.35], yaw: Math.PI - .06, pitch: -0.025 }, bounds, cells, signs,
     tramRoute:{points:[[-82,8.4,61],[82,8.4,61]],stops:[[13,8.4,61],[-72,8.4,61],[72,8.4,61]]},
     routeMetadata:{paths:routePaths,undergroundOpenings:groundHoles,levels:[-7.2,-3.6,0,3.3,4.2,8.4,12.6],

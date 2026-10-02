@@ -8,13 +8,13 @@ The default seed is `73191`. The current generated district contains:
 
 | World asset | Count |
 | --- | ---: |
-| Static geometry instances | 57,535 |
+| Static geometry instances | 57,533 |
 | Colliders | 1,236 |
 | Traversable ramps | 9 |
 | Interactables | 31 |
 | Named locations | 12 |
 | Cells | 16 |
-| Navigation nodes | 2,339 |
+| Navigation nodes | 2,345 |
 
 These are generated-world counts. Renderer instance totals also include dynamic population, equipment/status indicators, and any enabled diagnostic geometry. Visible counts vary with the camera and quality settings.
 
@@ -22,7 +22,7 @@ These are generated-world counts. Renderer instance totals also include dynamic 
 
 | Module | Responsibility |
 | --- | --- |
-| `world-worker.js`, `src/world/district.js` | Generate the district off the main thread: primitive instances, colliders, ramps, interaction targets, signs, locations, and connected navigation data |
+| `world-worker.js`, `src/world/district.js`, `cell-stream.js`, `cell-stream-data.js` | Generate the district off the main thread: primitive instances, colliders, ramps, interaction targets, signs, locations, and connected navigation data |
 | `src/engine/renderer.js`, `shaders.js`, `geometry.js`, `math.js` | Own WebGPU resources, procedural mesh/material data, visibility compute, shadows, scene rendering, and graphics measurements |
 | `src/engine/physics.js`, `input.js`, `navigation.js` | Player movement, spatial collision queries, assisted vertical traversal, input, route guidance, and projected markers |
 | `src/game/content.js`, `state.js` | Authored missions/items/factions, event-driven progression, economy, equipment, world records, and validated saves |
@@ -31,7 +31,7 @@ These are generated-world counts. Renderer instance totals also include dynamic 
 | `src/ui/ui.js`, `style.css` | Menu, HUD, map, journal, inventory, dialogue, circuit puzzle, settings, and diagnostics |
 | `src/main.js` | Coordinate the frame loop, interaction rules, repairs, travel, save checkpoints, state-to-world synchronization, and ending presentation |
 
-World generation is a startup worker task. The main thread retains the completed district and updates movement, nearby interactions, gameplay state, population, and audio. Static geometry is uploaded to the renderer; dynamic instance buffers are refreshed as the simulation advances. The HUD, projected markers, and menus use DOM and 2D canvas independently of the WebGPU scene.
+World generation runs once in a persistent worker. It sends a structural manifest and supplies detailed cells on demand. The main thread retains nine detailed cells, permanent structure and compact gameplay/collision/navigation metadata. Selection runs at most four times per second, with hysteresis and one outstanding request of at most two cells. The previous detailed set remains visible until its replacement is complete, then the old arrays and graphics buffers are released. Dynamic buffers update only when the renderer can submit a frame. The HUD, projected markers, and menus use DOM and 2D canvas independently of the WebGPU scene.
 
 ## Rendering pipeline
 
@@ -71,13 +71,13 @@ Storage is local to one browser and origin. There is no account system, cloud sy
 
 ## Measurements and verification
 
-F3 exposes live measurements. Frame intervals come from the animation loop; CPU timings measure code execution. GPU duration is reported only when the adapter supports timestamp queries and a sample has completed; otherwise it remains unavailable. Visible-instance and triangle counts derive from asynchronously read indirect counts and the actual primitive meshes, so they can lag the current frame. Renderer memory reports tracked GPU buffer/texture allocations rather than total browser memory or complete driver residency.
+F3 exposes live measurements. Frame intervals summarize completed GPU work over a sampling window; simulation frame intervals are tracked separately. At most two submitted frames may remain pending. CPU timings measure code execution. GPU duration is reported only when the adapter supports timestamp queries and a sample has completed; otherwise it remains unavailable. Visible-instance and triangle counts derive from asynchronously read indirect counts and the actual primitive meshes, so they can lag the current frame. Renderer memory reports tracked GPU buffer/texture allocations rather than total browser memory or complete driver residency.
 
 `npm test` runs Node tests for gameplay, save behavior, movement/collision, navigation, population, rendering mathematics/contracts, and optional page tools. These tests do not establish hardware rendering performance. `node tools/validate-district.mjs` checks generated transforms, required targets, target support/obstructions, graph reachability, sampled walking and ramp routes, deterministic generation, door ownership, and the tram route. Browser/GPU execution is a separate validation layer. Release-specific outcomes and measurements should accompany the final build.
 
 ## Deliberate limits
 
-- **All 16 cells remain resident.** Cell tags organize data and diagnostics. There is no asynchronous world streaming, resource eviction, or continuous city generation. Visibility culling and distance-based detail reduction do not unload the district.
+- **The finite authored district remains in the generation worker.** Main-thread and GPU detail residency is bounded to nine cells and supports actual asynchronous eviction. This version does not fetch cells from a network service or generate an unbounded city. Permanent structure and collision/navigation metadata remain available throughout the district.
 - **Lighting uses one directional shadow map.** There are no cascaded shadow maps. Shadow coverage and detail are bounded around the camera, with quality-dependent resolution and reach.
 - **There is no SSR or SSAO.** Reflective materials use the analytical sky rather than screen-space scene reflections. Material shading includes local procedural variation, not a screen-space ambient-occlusion pass. There is no ray tracing or global-illumination system.
 - **The visual world is built from procedural primitives.** It aims for a consistent illustrated city style, without claims of photorealism. Some facades are scenery; the authored interiors and routes define the playable spaces.

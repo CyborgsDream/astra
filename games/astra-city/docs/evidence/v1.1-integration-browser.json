@@ -5,200 +5,10 @@
   },
   "started": true,
   "walk": {
-    "distance": 0.7296387931131694
+    "distance": 0.4487934773782832
   },
   "pause": "pause",
   "map": "District map",
-  "travel": [
-    {
-      "id": "rooftop_ladder",
-      "type": "ladder",
-      "to": [
-        -25.3,
-        8.4,
-        -7
-      ],
-      "began": {
-        "mode": "ladder",
-        "overlay": false
-      },
-      "arrival": {
-        "position": [
-          -25.3,
-          8.4,
-          -7
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    },
-    {
-      "id": "rooftop_ladder_down",
-      "type": "ladder",
-      "to": [
-        -22.65,
-        0,
-        -7
-      ],
-      "began": {
-        "mode": "ladder",
-        "overlay": false
-      },
-      "arrival": {
-        "position": [
-          -22.65,
-          0,
-          -7
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    },
-    {
-      "id": "service_ladder",
-      "type": "ladder",
-      "to": [
-        -20,
-        0,
-        -54.5
-      ],
-      "began": {
-        "mode": "ladder",
-        "overlay": false
-      },
-      "arrival": {
-        "position": [
-          -20,
-          0,
-          -54.5
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    },
-    {
-      "id": "service_ladder_top",
-      "type": "ladder",
-      "to": [
-        -20,
-        -7.2,
-        -56.2
-      ],
-      "began": {
-        "mode": "ladder",
-        "overlay": false
-      },
-      "arrival": {
-        "position": [
-          -20,
-          -7.2,
-          -56.2
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    },
-    {
-      "id": "lift_ground",
-      "type": "elevator",
-      "to": [
-        -20,
-        8.4,
-        1
-      ],
-      "began": {
-        "overlay": true
-      },
-      "arrival": {
-        "position": [
-          -20,
-          8.4,
-          1
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    },
-    {
-      "id": "lift_roof",
-      "type": "elevator",
-      "to": [
-        -20,
-        0,
-        1
-      ],
-      "began": {
-        "overlay": true
-      },
-      "arrival": {
-        "position": [
-          -20,
-          0,
-          1
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    },
-    {
-      "id": "needle_house_lift",
-      "type": "elevator",
-      "to": [
-        32.6,
-        72,
-        54.08
-      ],
-      "began": {
-        "overlay": true
-      },
-      "arrival": {
-        "position": [
-          32.6,
-          72,
-          54.08
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    },
-    {
-      "id": "needle_house_lift_roof",
-      "type": "elevator",
-      "to": [
-        21.5,
-        0,
-        58
-      ],
-      "began": {
-        "overlay": true
-      },
-      "arrival": {
-        "position": [
-          21.5,
-          0,
-          58
-        ],
-        "clear": true,
-        "supported": true,
-        "settled": true
-      }
-    }
-  ],
-  "delayedTransit": {
-    "hidden": true,
-    "settled": false,
-    "revealed": true,
-    "settledAfter": true,
-    "completedFrames": 547,
-    "requiredFrame": 533
-  },
   "dialogue": "Conversation",
   "questAccepted": "active",
   "intro": {
@@ -210,8 +20,8 @@
       "paidRuns": 1,
       "completions": 1,
       "choice": null,
-      "acceptedAt": 18.34990000000011,
-      "completedAt": 18.34990000000011
+      "acceptedAt": 0.21659999999999857,
+      "completedAt": 0.21659999999999857
     },
     "credits": 157
   },
@@ -258,8 +68,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.34990000000011,
-          "completedAt": 18.34990000000011
+          "acceptedAt": 0.21659999999999857,
+          "completedAt": 0.21659999999999857
         },
         "static_below": {
           "status": "completed",
@@ -269,8 +79,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.34990000000011,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.23319999999999713,
+          "completedAt": 0.24969999999999715
         },
         "missing_shift": {
           "status": "completed",
@@ -280,8 +90,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.366500000000084,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.24969999999999715,
+          "completedAt": 0.24969999999999715
         },
         "sealed_orders": {
           "status": "completed",
@@ -291,8 +101,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.366500000000084,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.24969999999999715,
+          "completedAt": 0.24969999999999715
         },
         "district_choice": {
           "status": "completed",
@@ -302,8 +112,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": "commons",
-          "acceptedAt": 18.366500000000084,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.24969999999999715,
+          "completedAt": 0.24969999999999715
         }
       },
       "position": [
@@ -323,8 +133,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.34990000000011,
-          "completedAt": 18.34990000000011
+          "acceptedAt": 0.21659999999999857,
+          "completedAt": 0.21659999999999857
         },
         "static_below": {
           "status": "completed",
@@ -334,8 +144,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.34990000000011,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.23319999999999713,
+          "completedAt": 0.24969999999999715
         },
         "missing_shift": {
           "status": "completed",
@@ -345,8 +155,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.366500000000084,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.24969999999999715,
+          "completedAt": 0.24969999999999715
         },
         "sealed_orders": {
           "status": "completed",
@@ -356,8 +166,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": null,
-          "acceptedAt": 18.366500000000084,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.24969999999999715,
+          "completedAt": 0.24969999999999715
         },
         "district_choice": {
           "status": "completed",
@@ -367,8 +177,8 @@
           "paidRuns": 1,
           "completions": 1,
           "choice": "commons",
-          "acceptedAt": 18.366500000000084,
-          "completedAt": 18.366500000000084
+          "acceptedAt": 0.24969999999999715,
+          "completedAt": 0.24969999999999715
         }
       },
       "position": [
@@ -383,7 +193,7 @@
     "stats": {
       "backend": "WebGPU",
       "frameMs": 0,
-      "cpuMs": 2,
+      "cpuMs": 3,
       "gpuMs": null,
       "drawCalls": 17,
       "instances": 41823,
@@ -398,7 +208,7 @@
       "visibilityPending": true,
       "computeDispatches": 8,
       "adapter": "google / swiftshader",
-      "submissionFrameMs": 28,
+      "submissionFrameMs": 12.199999999254942,
       "renderWidth": 640,
       "renderHeight": 360,
       "samples": 1,
@@ -421,7 +231,7 @@
       "generation": 1,
       "settled": true,
       "fps": 0,
-      "simulationFrameMs": 22.394119999999983,
+      "simulationFrameMs": 21.45223999999999,
       "worldObjects": 57533,
       "renderScale": 0.5,
       "collisionQueries": 298,
@@ -483,31 +293,31 @@
     },
     "renderer": {
       "backend": "WebGPU",
-      "frameMs": 341.95000000018626,
-      "cpuMs": 6.799999998882413,
-      "gpuMs": 642.523874,
+      "frameMs": 439.09999999962747,
+      "cpuMs": 2.599999999627471,
+      "gpuMs": 604.572154,
       "drawCalls": 18,
       "instances": 41813,
       "visibleObjects": 0,
       "triangles": 0,
       "memoryBytes": 20144280,
       "loadedCells": 9,
-      "shadowVisibleObjects": 26112,
-      "shadowTriangles": 619590,
+      "shadowVisibleObjects": 25901,
+      "shadowTriangles": 614146,
       "lines": 0,
       "statsSampleFrame": 2,
       "visibilityPending": true,
       "computeDispatches": 8,
       "adapter": "google / swiftshader",
-      "submissionFrameMs": 349.7999999988824,
+      "submissionFrameMs": 361.2000000011176,
       "renderWidth": 195,
       "renderHeight": 422,
       "samples": 1,
       "quality": "low",
       "timestampQueries": true,
       "inFlightFrames": 2,
-      "completedFrames": 14,
-      "submittedFrames": 16
+      "completedFrames": 15,
+      "submittedFrames": 17
     }
   },
   "compass": "W",

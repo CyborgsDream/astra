@@ -1,13 +1,25 @@
 # Changelog
 
-## 2026-10-02 — Recovery hardening
+## 2026-10-02 — Milestone 3 · Integrated play and recovery verified
 
-- Added bounded 3×3 GPU cell residency so static rendering no longer keeps all 16 district cells uploaded at once.
-- Added a tested cell-selection module with edge and out-of-bounds behavior.
-- Fixed the east/west compass orientation to match the first-person camera convention.
-- Replaced the dead startup path with a real graphics retry and made WebGPU adapter acquisition try high-performance, default, then low-power preferences.
-- Reduced ambient pedestrian sidestep range to avoid wall clipping on narrow generated routes.
-- Updated project-state and next-work documentation to separate verified source state from native-hardware validation.
+- Passed all eight mechanical interactions and deliberately delayed transit-cell arrival in native WebGPU.
+- Passed the full integrated gameplay/save/graphics regression with no unexpected browser or renderer errors.
+- Reconciled immediate relocation behavior from concurrent source work and passed all 71 automated tests.
+- Verified new-game, recovery and development teleport scheduling in the rebuilt native application.
+- Captured six street views; found a rod-transform defect and loss of coarse distant facades during detail eviction. These bounded visual fixes are the next task, before publication.
+
+## 2026-10-02 — Milestone 2 · 1.1.0 integration
+
+- Reconciled GitHub hardening commits `9bd5d808` and `ef8f41bd`: retained their source validation workflow and immediate residency checks after new game, checkpoint recovery and development teleport. The temporary synchronous residency helper is superseded by the active streamed implementation, with nearest-cell regression coverage retained.
+- Added persistent-worker detail residency: nine detailed cells, permanent structure, bounded requests, stale-response rejection and eviction.
+- Added robust native adapter selection, optional timestamp fallback, a working retry screen and clean device-loss shutdown.
+- Bounded the rendering queue to two pending frames; telemetry distinguishes completed rendering from simulation timing. Cached sign-atlas uploads.
+- Repaired restored locomotion state, security reset behaviour, compass headings and seed zero.
+- Reworked pedestrian edge clearance, supported avoidance, road lane widths and drone altitude routes.
+- Added collision-checked ladder waypoints and explicit enclosed lift transitions; destination detail must render before the ride is revealed.
+- Added population, mesh and lighting diagnostics.
+- Passed 71 automated tests, district/mechanical checks and the five-minute population check. The native browser flow passed all eight mechanical interactions, delayed transit scenery, gameplay, saves, diagnostics and graphics recovery without unexpected errors.
+- Preserved the original GitHub experiment and the recovered modular game. Milestone 1 is committed and archived; milestone 2 is archived. The reconciled release is being verified for publication.
 
 ## 2026-10-02 — Recovery baseline
 

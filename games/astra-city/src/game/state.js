@@ -35,7 +35,7 @@ function initialState(seed = DEFAULT_SEED) {
       opened: [], looted: [], repaired: [], hacked: [], rescued: [],
       power: false, hour: 15.5, weather: 'clear', policy: null, ending: null, flags: {},
     },
-    settings: { quality: 'high', renderScale: 1, sensitivity: 1, volume: 0.35, fov: 75, invertY: false, showMinimap: true, adaptive: true },
+    settings: { quality: 'medium', renderScale: 1, sensitivity: 1, volume: 0.35, fov: 75, invertY: false, showMinimap: true, adaptive: true },
     playTime: 0,
   };
 }

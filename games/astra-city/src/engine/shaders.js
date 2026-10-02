@@ -16,6 +16,7 @@ struct Frame {
   cameraPlanes: array<vec4<f32>, 6>,
   shadowPlanes: array<vec4<f32>, 6>,
   shadowCenter: vec4<f32>,
+  debugParams: vec4<f32>,
 };
 `;
 
@@ -371,6 +372,9 @@ fn shadowFactor(p: vec3<f32>, normal: vec3<f32>, nl: f32) -> f32 {
     let haze = min(0.78, 1.0 - exp(-max(0.0, distance - 24.0) * frame.shadowCenter.w));
     color = mix(color, skyRadiance(normalize(p - frame.cameraTime.xyz)), haze);
   }
+  if(frame.debugParams.x>2.5){return vec4<f32>(vec3<f32>(nl*shadow),1.0);}
+  if(frame.debugParams.x>1.5){return vec4<f32>(pow(max(base,vec3<f32>(0.0)),vec3<f32>(1.0/2.2)),1.0);}
+  if(frame.debugParams.x>0.5){return vec4<f32>(normal*0.5+vec3<f32>(0.5),1.0);}
   return vec4<f32>(toneMap(color), 1.0);
 }
 

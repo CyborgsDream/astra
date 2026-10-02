@@ -1,4 +1,5 @@
 /* ASTRA CITY population. Native geometry instances; no renderer dependency. */
+import { CollisionWorld } from '../engine/physics.js';
 const TAU = Math.PI * 2;
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const isPoint = p => p && p.length >= 3 && Number.isFinite(p[0]) && Number.isFinite(p[1]) && Number.isFinite(p[2]);
@@ -311,14 +312,18 @@ function tramBody(a) {
 }
 
 export class Population {
-  constructor(world = {}, seed = world?.seed ?? 73191) {
+  constructor(world = {}, seed = world?.seed ?? 73191, collision = null) {
     world = world && typeof world==='object' ? world : {};
     this.seed = seed; this.time = 0; this.disposed = false; this._random = random(seed);
     this._actors=[]; this._people=[]; this._traffic=[]; this._authored=[]; this._instances=[];
     this._player = isPoint(world.spawn?.position) ? [...world.spawn.position] : [0,0,0];
     this._environment={hour:10,weather:'clear'};
+    // Reuse the spatial broadphase and, in the game, the live door state.
+    this._clearance=collision || (Array.isArray(world.colliders)&&world.colliders.length ? new CollisionWorld(world.colliders,world.ramps || []) : null);
     this._foot=suppliedGraph(world,'foot'); this._road=suppliedGraph(world,'road'); this._air=suppliedGraph(world,'air');
-    if (this._road.edges.length<3 && Array.isArray(world.roads)) { const fallback=roadsGraph(world); if(fallback.totalLength>this._road.totalLength) this._road=fallback; }
+    // Road polylines carry the physical widths and real intersections. Prefer
+    // them over widthless proximity links, which made cars weave every 5 metres.
+    if (Array.isArray(world.roads)) { const physical=roadsGraph(world); if(physical.edges.length) this._road=physical; }
     this._footFallback=!this._foot.edges.length;
     if(this._footFallback) this._foot=this._road;
     this._targets = (Array.isArray(world.interactables)?world.interactables:[]).filter(t=>t&&isPoint(t.position));
@@ -366,7 +371,7 @@ export class Population {
   }
   _attach(a,g) {
     a.graph=g;a.node=g.active[Math.floor(this._random()*g.active.length)];this._plan(a);
-    if(a.path.length>1) { const p=g.nodes[a.path[0]].p,q=g.nodes[a.path[1]].p;a.progress=this._random()*distance(p,q);this._position(a);a.yaw=a.targetYaw; }
+    if(a.path.length>1) { const p=g.nodes[a.path[0]].p,q=g.nodes[a.path[1]].p;a.progress=this._random()*distance(p,q);if(this._position(a)===false){a.progress=0;this._position(a);}a.yaw=a.targetYaw; }
   }
   _plan(a) {
     const g=a.graph,n=g.nodes[a.node];if(!n) return;
@@ -381,17 +386,32 @@ export class Population {
   }
   _position(a) {
     const g=a.graph,p=g.nodes[a.path[a.segment]]?.p,q=g.nodes[a.path[a.segment+1]]?.p;
-    if(!p||!q) return;
+    if(!p||!q) return true;
     const dx=q[0]-p[0],dy=q[1]-p[1],dz=q[2]-p[2],length=Math.hypot(dx,dy,dz),horizontal=Math.hypot(dx,dz)||1;
     const t=clamp(a.progress/length,0,1),fade=clamp(Math.min(a.progress,length-a.progress)/3.5,0,1);
     let lane=a.lane+a.sidestep;
-    if(a.motor) {const width=g.nodes[a.path[a.segment]].links.find(e=>e.to===a.path[a.segment+1])?.width||8;lane=clamp(width*.23,.65,2.4);}
+    if(a.motor) {const width=g.nodes[a.path[a.segment]].links.find(e=>e.to===a.path[a.segment+1])?.width||8;lane=Math.min(clamp(width*.23,.65,2.4),Math.max(0,(width-a.width)/2-.12));}
     else if(this._footFallback&&(a.kind==='npc'||a.kind==='robot')) {const width=g.nodes[a.path[a.segment]].links.find(e=>e.to===a.path[a.segment+1])?.width||8;lane=Math.max(.55,width*.5-.75)+a.sidestep;}
     else if(a.kind==='drone')lane=0;
-    a.position[0]=p[0]+dx*t-dz/horizontal*lane*fade;
-    a.position[1]=p[1]+dy*t+a.altitude;
-    a.position[2]=p[2]+dz*t+dx/horizontal*lane*fade;
+    const centre=[p[0]+dx*t,p[1]+dy*t+a.altitude,p[2]+dz*t];
+    let next=[centre[0]-dz/horizontal*lane*fade,centre[1],centre[2]+dx/horizontal*lane*fade];
+    if(this._clearance&&(a.kind==='npc'||a.kind==='robot')) {
+      let supported=null;
+      // Keep avoidance within real floor space. Narrow passages naturally reduce
+      // lateral movement; the route centre remains the final fallback.
+      for(const fraction of [1,.5,.25,0]) {
+        const candidate=[centre[0]-dz/horizontal*lane*fade*fraction,centre[1],centre[2]+dx/horizontal*lane*fade*fraction];
+        const floor=this._clearance.floorAt(candidate,.27,.42,.45);
+        if(!Number.isFinite(floor))continue;
+        candidate[1]=floor;
+        if(!this._clearance.blocked(candidate,.27,1.76)){supported=candidate;break;}
+      }
+      if(!supported)return false;
+      next=supported;
+    }
+    for(let i=0;i<3;i++)a.position[i]=next[i];
     a.targetYaw=Math.atan2(-dx,-dz);a.edgeLength=length;
+    return true;
   }
   _reverse(a) {
     const from=a.path[a.segment],to=a.path[a.segment+1];if(from===undefined||to===undefined)return;
@@ -415,8 +435,7 @@ export class Population {
     if(pd<2&&Math.abs(this._player[1]-a.position[1])<1.5&&px*forwardX+pz*forwardZ>-.2) {
       side+=(px*rightX+pz*rightZ>0?-1:1)*.7*(1-pd/2);factor=Math.min(factor,clamp((pd-.7)/.9,0,1));
     }
-    const sidestepLimit=this._footFallback?.65:.34;
-    a.sidestep+=(clamp(side,-sidestepLimit,sidestepLimit)-a.sidestep)*Math.min(1,dt*4);
+    a.sidestep+=(clamp(side,-.85,.85)-a.sidestep)*Math.min(1,dt*4);
     a.blockedFor=factor<.12?a.blockedFor+dt:Math.max(0,a.blockedFor-dt);
     if(a.blockedFor>3.2)this._reverse(a);
     return factor;
@@ -449,15 +468,27 @@ export class Population {
     if(a.motor)desired=this._trafficSpeed(a,desired);
     a.speed+=(desired-a.speed)*Math.min(1,dt*(desired<a.speed?7:2.2));
     let travel=a.speed*dt;if(a.motor)travel=Math.min(travel,a.maxStep);
+    const previous={position:[...a.position],node:a.node,segment:a.segment,progress:a.progress,targetYaw:a.targetYaw};
+    let blocked=false;
     for(let crossings=0;travel>0&&crossings<8;crossings++) {
       const p=a.graph.nodes[a.path[a.segment]]?.p,q=a.graph.nodes[a.path[a.segment+1]]?.p;if(!p||!q)break;
       const length=distance(p,q),remaining=length-a.progress;
       if(travel<remaining) {a.progress+=travel;break;}
-      travel-=Math.max(0,remaining);a.progress=length;this._position(a);a.node=a.path[a.segment+1];a.segment++;a.progress=0;
+      travel-=Math.max(0,remaining);a.progress=length;
+      if(this._position(a)===false){blocked=true;break;}
+      a.node=a.path[a.segment+1];a.segment++;a.progress=0;
       if(a.segment>=a.path.length-1) {a.idleLeft=a.kind==='npc'?(1.2+this._random()*5.5)*(this._environment.hour<6?1.5:1):a.kind==='drone'?.5:1.3+this._random()*3;a.speed=0;break;}
       if(a.motor&&a.graph.nodes[a.node].links.length>=3&&this._random()<.28) {a.idleLeft=.35+this._random()*.95;a.speed=0;break;}
     }
-    this._position(a);a.yaw=turn(a.yaw,a.targetYaw,dt*(a.motor?3.6:6));a.walkPhase+=a.speed*dt*4.6;
+    if(blocked||this._position(a)===false) {
+      for(let i=0;i<3;i++)a.position[i]=previous.position[i];
+      a.node=previous.node;a.segment=previous.segment;a.progress=previous.progress;a.targetYaw=previous.targetYaw;
+      a.speed=0;a.idleLeft=0;a.obstacleTime=(a.obstacleTime||0)+dt;
+      if(a.obstacleTime>3.2){this._reverse(a);a.obstacleTime=0;}
+      return;
+    }
+    a.obstacleTime=0;
+    a.yaw=turn(a.yaw,a.targetYaw,dt*(a.motor?3.6:6));a.walkPhase+=a.speed*dt*4.6;
   }
   _createTram(route) {
     const source=Array.isArray(route)?route:route?.points;if(!Array.isArray(source))return;
@@ -563,6 +594,6 @@ export class Population {
     if(this.disposed)return;this.disposed=true;
     for(const a of this._actors){a.parts.length=0;a.path.length=0;}
     this._actors.length=0;this._people.length=0;this._traffic.length=0;this._authored.length=0;this._instances.length=0;this._targets.length=0;this._anchors={};
-    this._foot=null;this._road=null;this._air=null;
+    this._foot=null;this._road=null;this._air=null;this._clearance=null;
   }
 }

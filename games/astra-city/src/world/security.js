@@ -10,6 +10,7 @@ export class SecuritySystem {
   }
   update(dt,player,state,time) {
     const disabled=state.world.flags?.securityDisabled || state.world.repaired?.includes('archive');
+    if(disabled){this.exposure=0;this.damageClock=0;for(const sensor of this.sensors)sensor.alert=0;}
     let detected=false;
     this.list.length=0;
     for(const sensor of this.sensors){
@@ -28,7 +29,7 @@ export class SecuritySystem {
     }
     this.exposure=Math.max(0,Math.min(1,this.exposure+(detected?dt*.36:-dt*.27)));
     this.damageClock+=dt;
-    if(this.exposure>=.98 && this.damageClock>=1.2){this.damageClock=0;return {damage:5,message:'Security pulse. Break line of sight or crouch behind cover.'};}
+    if(!disabled && this.exposure>=.98 && this.damageClock>=1.2){this.damageClock=0;return {damage:5,message:'Security pulse. Break line of sight or crouch behind cover.'};}
     return {damage:0,detected,exposure:this.exposure};
   }
   instances(){return this.list;}

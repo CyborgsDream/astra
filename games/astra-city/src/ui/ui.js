@@ -1,6 +1,6 @@
 /* ASTRA CITY — dependency-free interface. All game mutations belong to onAction. */
 
-const DEFAULT_SETTINGS = Object.freeze({ quality: 'high', renderScale: 1, fov: 75, sensitivity: 1, volume: 0.65, invertY: false, showMinimap: true });
+const DEFAULT_SETTINGS = Object.freeze({ quality: 'medium', renderScale: 1, fov: 75, sensitivity: 1, volume: 0.65, invertY: false, showMinimap: true });
 const PANEL_NAMES = { map: 'District map', journal: 'Journal', inventory: 'Inventory', settings: 'Settings', pause: 'Paused', shop: 'Trade', dialogue: 'Conversation', hack: 'Circuit access' };
 const CARDINALS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -732,7 +732,7 @@ export class GameUI {
     el.hidden = !enabled;
     if (!enabled) return;
     const ms = v => Number.isFinite(v) ? `${v.toFixed(1)} ms` : '—';
-    const rows = [['Frame', ms(stats.frameMs)], ['CPU', ms(stats.cpuMs)], ['GPU', ms(stats.gpuMs)], ['Draw calls', number(stats.drawCalls)], ['Visible objects', number(stats.visibleObjects)], ['Triangles', number(stats.triangles)], ['Loaded cells', number(stats.loadedCells)], ['GPU memory', Number.isFinite(stats.memoryBytes) ? `${(stats.memoryBytes / 1048576).toFixed(1)} MiB` : '—']];
+    const rows = [['Frame', ms(stats.frameMs)], ['CPU', ms(stats.cpuMs)], ['GPU', ms(stats.gpuMs)], ['Draw calls', number(stats.drawCalls)], ['Visible objects', number(stats.visibleObjects)], ['Instances', number(stats.instances)], ['Triangles', number(stats.triangles)], ['Loaded cells', `${number(stats.loadedCells)} / ${number(stats.worldCells)}`], ['Pending cells', number(stats.pendingCells)], ['People', number(stats.npcCount)], ['Traffic', number(stats.trafficCount)], ['Queued frames', number(stats.inFlightFrames)], ['GPU memory', Number.isFinite(stats.memoryBytes) ? `${(stats.memoryBytes / 1048576).toFixed(1)} MiB` : '—']];
     el.innerHTML = `<header>${esc(stats.backend || 'Renderer')}<span>${Number.isFinite(stats.frameMs) && stats.frameMs > 0 ? `${Math.round(1000 / stats.frameMs)} FPS` : ''}</span></header>${rows.map(([label, value]) => `<div><span>${label}</span><b>${esc(value)}</b></div>`).join('')}${stats.adapter ? `<small>${esc(typeof stats.adapter === 'string' ? stats.adapter : stats.adapter.description || stats.adapter.device || '')}</small>` : ''}`;
   }
 

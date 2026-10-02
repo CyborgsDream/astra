@@ -1,0 +1,308 @@
+{
+  "source": "/workspace/scratch/0e54ad0a22f3/astra-site",
+  "seed": 73191,
+  "trips": 8,
+  "passed": true,
+  "results": [
+    {
+      "id": "lift_ground",
+      "type": "elevator",
+      "from": [
+        -19.3,
+        0,
+        1
+      ],
+      "to": [
+        -20,
+        8.4,
+        1
+      ],
+      "fromFloor": 0,
+      "toFloor": 8.4,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "opaque ride transition",
+      "passed": true
+    },
+    {
+      "id": "lift_roof",
+      "type": "elevator",
+      "from": [
+        -19.3,
+        8.4,
+        1
+      ],
+      "to": [
+        -20,
+        0,
+        1
+      ],
+      "fromFloor": 8.4,
+      "toFloor": 0,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "opaque ride transition",
+      "passed": true
+    },
+    {
+      "id": "rooftop_ladder",
+      "type": "ladder",
+      "from": [
+        -22.65,
+        0,
+        -7
+      ],
+      "to": [
+        -25.3,
+        8.4,
+        -7
+      ],
+      "fromFloor": 0,
+      "toFloor": 8.4,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "visible waypoint climb",
+      "waypoints": [
+        [
+          -22.65,
+          0,
+          -7
+        ],
+        [
+          -23.2,
+          0,
+          -7
+        ],
+        [
+          -23.2,
+          8.5,
+          -7
+        ],
+        [
+          -25.3,
+          8.5,
+          -7
+        ],
+        [
+          -25.3,
+          8.4,
+          -7
+        ]
+      ],
+      "accepted": true,
+      "blockedFrames": 0,
+      "sweptSegmentsClear": true,
+      "arrived": true,
+      "passed": true
+    },
+    {
+      "id": "rooftop_ladder_down",
+      "type": "ladder",
+      "from": [
+        -25.3,
+        8.4,
+        -7
+      ],
+      "to": [
+        -22.65,
+        0,
+        -7
+      ],
+      "fromFloor": 8.4,
+      "toFloor": 0,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "visible waypoint climb",
+      "waypoints": [
+        [
+          -25.3,
+          8.4,
+          -7
+        ],
+        [
+          -25.3,
+          8.5,
+          -7
+        ],
+        [
+          -23.2,
+          8.5,
+          -7
+        ],
+        [
+          -23.2,
+          0,
+          -7
+        ],
+        [
+          -22.65,
+          0,
+          -7
+        ]
+      ],
+      "accepted": true,
+      "blockedFrames": 0,
+      "sweptSegmentsClear": true,
+      "arrived": true,
+      "passed": true
+    },
+    {
+      "id": "service_ladder",
+      "type": "ladder",
+      "from": [
+        -20,
+        -7.2,
+        -56.2
+      ],
+      "to": [
+        -20,
+        0,
+        -54.5
+      ],
+      "fromFloor": -7.2,
+      "toFloor": 0,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "visible waypoint climb",
+      "waypoints": [
+        [
+          -20,
+          -7.2,
+          -56.2
+        ],
+        [
+          -20,
+          -7.2,
+          -56.55
+        ],
+        [
+          -20,
+          0.1,
+          -56.55
+        ],
+        [
+          -20,
+          0.1,
+          -54.5
+        ],
+        [
+          -20,
+          0,
+          -54.5
+        ]
+      ],
+      "accepted": true,
+      "blockedFrames": 0,
+      "sweptSegmentsClear": true,
+      "arrived": true,
+      "passed": true
+    },
+    {
+      "id": "service_ladder_top",
+      "type": "ladder",
+      "from": [
+        -20,
+        0,
+        -54.5
+      ],
+      "to": [
+        -20,
+        -7.2,
+        -56.2
+      ],
+      "fromFloor": 0,
+      "toFloor": -7.2,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "visible waypoint climb",
+      "waypoints": [
+        [
+          -20,
+          0,
+          -54.5
+        ],
+        [
+          -20,
+          0.1,
+          -54.5
+        ],
+        [
+          -20,
+          0.1,
+          -56.55
+        ],
+        [
+          -20,
+          -7.2,
+          -56.55
+        ],
+        [
+          -20,
+          -7.2,
+          -56.2
+        ]
+      ],
+      "accepted": true,
+      "blockedFrames": 0,
+      "sweptSegmentsClear": true,
+      "arrived": true,
+      "passed": true
+    },
+    {
+      "id": "needle_house_lift",
+      "type": "elevator",
+      "from": [
+        21.5,
+        0,
+        58
+      ],
+      "to": [
+        32.6,
+        72,
+        54.08
+      ],
+      "fromFloor": 0,
+      "toFloor": 72,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "opaque ride transition",
+      "passed": true
+    },
+    {
+      "id": "needle_house_lift_roof",
+      "type": "elevator",
+      "from": [
+        32.6,
+        72,
+        54.08
+      ],
+      "to": [
+        21.5,
+        0,
+        58
+      ],
+      "fromFloor": 72,
+      "toFloor": 0,
+      "fromSupported": true,
+      "toSupported": true,
+      "fromClear": true,
+      "toClear": true,
+      "mode": "opaque ride transition",
+      "passed": true
+    }
+  ]
+}

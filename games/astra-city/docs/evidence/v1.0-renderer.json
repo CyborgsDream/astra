@@ -1,0 +1,31 @@
+{
+  "ready": true,
+  "stats": {
+    "backend": "WebGPU",
+    "frameMs": 1901.2999999998137,
+    "cpuMs": 0.40000000037252903,
+    "gpuMs": 2029.171425,
+    "drawCalls": 17,
+    "instances": 59214,
+    "visibleObjects": 15629,
+    "triangles": 395888,
+    "memoryBytes": 57473056,
+    "loadedCells": 16,
+    "shadowVisibleObjects": 43283,
+    "shadowTriangles": 1030840,
+    "lines": 0,
+    "statsSampleFrame": 1,
+    "visibilityPending": false,
+    "computeDispatches": 8,
+    "adapter": "google / swiftshader",
+    "renderWidth": 1280,
+    "renderHeight": 720,
+    "samples": 4,
+    "quality": "medium",
+    "timestampQueries": true
+  },
+  "errors": [],
+  "compilation": [],
+  "worldInstances": 57535,
+  "browserErrors": []
+}

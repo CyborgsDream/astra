@@ -130,6 +130,26 @@ export class CollisionWorld {
     return result;
   }
 
+  canTraverse(from, to, radius = .32, height = 1.76) {
+    if (!finite3(from) || !finite3(to)) return false;
+    const reach = Math.hypot(to[0]-from[0],to[2]-from[2]) / 2 + radius;
+    const candidates = this.query((from[0]+to[0])/2,(from[2]+to[2])/2,reach);
+    for (const c of candidates) {
+      // A moving standing capsule uses the same conservative horizontal bounds
+      // as normal movement. Expand obstacles by the capsule, then sweep a point.
+      const min=[c.min[0]-radius+EPS,c.min[1]-height+EPS,c.min[2]-radius+EPS];
+      const max=[c.max[0]+radius-EPS,c.max[1]-EPS,c.max[2]+radius-EPS];
+      let enter=0,leave=1;
+      for(let axis=0;axis<3;axis++) {
+        const delta=to[axis]-from[axis];
+        if(Math.abs(delta)<1e-9) {if(from[axis]<min[axis]||from[axis]>max[axis]){leave=-1;break;}}
+        else {const a=(min[axis]-from[axis])/delta,b=(max[axis]-from[axis])/delta;enter=Math.max(enter,Math.min(a,b));leave=Math.min(leave,Math.max(a,b));if(enter>leave)break;}
+      }
+      if(enter<=leave)return false;
+    }
+    return true;
+  }
+
   lineOfSight(from, to) {
     const dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
     const length = Math.hypot(dx, dy, dz);
@@ -186,6 +206,17 @@ export class PlayerController {
     if (Number.isFinite(player.yaw)) this.yaw = player.yaw;
     if (Number.isFinite(player.pitch)) this.pitch = clamp(player.pitch, -1.45, 1.45);
     this.velocity = [0, 0, 0];
+    this.travel = null;
+    this.riding = false;
+    this.grounded = false;
+    this.crouched = false;
+    this.height = 1.76;
+    this.eyeHeight = 1.62;
+    this.coyote = 0;
+    this.jumpBuffer = 0;
+    this.impact = 0;
+    this.speed = 0;
+    this.walkClock = 0;
     this.lastSafe = [...this.position];
   }
 
@@ -218,13 +249,35 @@ export class PlayerController {
     return true;
   }
 
+  moveAlongPath(points, duration = 1.2, mode = 'ladder') {
+    if(!Array.isArray(points)||!points.length||!points.every(finite3))return false;
+    const path=[[...this.position]],lengths=[0];
+    for(const point of points) {
+      const from=path.at(-1),length=Math.hypot(...point.map((v,i)=>v-from[i]));
+      if(length<.001)continue;
+      if(!this.collision.canTraverse(from,point,.32,1.76))return false;
+      path.push([...point]);lengths.push(lengths.at(-1)+length);
+    }
+    if(path.length<2)return false;
+    const destination=path.at(-1),floor=this.collision.floorAt(destination,.32,.05,.15);
+    if(!Number.isFinite(floor)||Math.abs(floor-destination[1])>.05||this.collision.blocked(destination,.32,1.76))return false;
+    this.travel={from:[...this.position],to:[...destination],path,lengths,total:lengths.at(-1),elapsed:0,duration:Math.max(.05,duration),mode};
+    this.velocity.fill(0);this.speed=0;this.grounded=false;this.riding=false;this.crouched=false;this.height=1.76;this.eyeHeight=1.62;
+    return true;
+  }
+
   update(dt, input, state) {
     this.impact = 0;
     if (this.travel) {
       const t = this.travel;
       t.elapsed += dt;
       const a = clamp(t.elapsed / t.duration, 0, 1), u = a * a * (3 - 2 * a);
-      this.position = t.from.map((v, i) => v + (t.to[i] - v) * u);
+      if(t.path) {
+        const distance=t.total*u;let segment=1;
+        while(segment<t.path.length-1&&distance>t.lengths[segment])segment++;
+        const ratio=clamp((distance-t.lengths[segment-1])/(t.lengths[segment]-t.lengths[segment-1]||1),0,1);
+        this.position=t.path[segment-1].map((v,i)=>v+(t.path[segment][i]-v)*ratio);
+      } else this.position = t.from.map((v, i) => v + (t.to[i] - v) * u);
       if (t.mode === 'mantle') this.position[1] += Math.sin(a * Math.PI) * .2;
       if (a >= 1) { this.travel = null; this.lastSafe = [...this.position]; }
       this.speed = 0;

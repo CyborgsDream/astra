@@ -49,6 +49,24 @@ function distSegment(x, z, a, b) {
   return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz);
 }
 
+// Continuous footprint intersection prevents sparse navigation samples from
+// accepting a diagonal that clips a building corner. Also shared by air routes.
+function segmentIntersectsFootprint(a, b, min, max, padding = 0) {
+  let enter = 0, leave = 1;
+  for (const axis of [0, 2]) {
+    const delta = b[axis] - a[axis], lower = min[axis] - padding, upper = max[axis] + padding;
+    if (Math.abs(delta) < 1e-9) {
+      if (a[axis] < lower || a[axis] > upper) return false;
+    } else {
+      const first = (lower - a[axis]) / delta, last = (upper - a[axis]) / delta;
+      enter = Math.max(enter, Math.min(first, last));
+      leave = Math.min(leave, Math.max(first, last));
+      if (enter > leave) return false;
+    }
+  }
+  return true;
+}
+
 export function generateDistrict(seed = 73191) {
   seed = Number.isFinite(Number(seed)) ? Number(seed) >>> 0 : 73191;
   const instances = [], colliders = [], ramps = [], interactables = [], locations = [], navNodes = [], navEdges = [], signs = [], routePaths = [];
@@ -708,8 +726,10 @@ export function generateDistrict(seed = 73191) {
   interact('lift_ground','elevator','Market service lift',[-19.3,0,1],{target:[-20,8.4,1],description:'Lift to the workshop and clinic roof galleries.'});
   interact('lift_roof','elevator','Market service lift — roof',[-19.3,8.4,1],{target:[-20,0,1]});
   ladder(-23.65,-7,0,8.4,'east');sign('ROOF ACCESS',-23.5,2.1,-7,1.2,.42,Math.PI/2);
-  interact('rooftop_ladder','ladder','Workshop service ladder',[-22.65,0,-7],{target:[-25.3,8.4,-7]});
-  interact('rooftop_ladder_down','ladder','Workshop ladder — down',[-25.3,8.4,-7],{target:[-22.65,0,-7]});
+  // Climb waypoints belong to scripted traversal; foot navigation retains the abstract ladder edge.
+  const workshopClimb=[[-22.65,0,-7],[-23.2,0,-7],[-23.2,8.5,-7],[-25.3,8.5,-7],[-25.3,8.4,-7]];
+  interact('rooftop_ladder','ladder','Workshop service ladder',[-22.65,0,-7],{target:[-25.3,8.4,-7],travelPath:workshopClimb});
+  interact('rooftop_ladder_down','ladder','Workshop ladder — down',[-25.3,8.4,-7],{target:[-22.65,0,-7],travelPath:[...workshopClimb].reverse()});
 
   // TURNWATER: open street hatch, two continuous stair flights, a chamber, and a second exit.
   stairs('utility_stair_upper',-65,-42,2.8,12,-3.6,0,'z',C.darkConcrete);
@@ -763,8 +783,9 @@ export function generateDistrict(seed = 73191) {
   for(const x of[-21.65,-18.35])rail([x,-58.65],[x,-55.35],0,1,true);
   rail([-21.65,-58.65],[-18.35,-58.65],0,1,true);
   sign('UTILITY EXIT',-20,1.7,-58.58,2.6,.44,0,C.yellow);
-  interact('service_ladder','ladder','Utility escape ladder',[-20,-7.2,-56.2],{target:[-20,0,-54.5]});
-  interact('service_ladder_top','ladder','Utility hatch — descend',[-20,0,-54.5],{target:[-20,-7.2,-56.2]});
+  const utilityClimb=[[-20,-7.2,-56.2],[-20,-7.2,-56.55],[-20,.1,-56.55],[-20,.1,-54.5],[-20,0,-54.5]];
+  interact('service_ladder','ladder','Utility escape ladder',[-20,-7.2,-56.2],{target:[-20,0,-54.5],travelPath:utilityClimb});
+  interact('service_ladder_top','ladder','Utility hatch — descend',[-20,0,-54.5],{target:[-20,-7.2,-56.2],travelPath:[...utilityClimb].reverse()});
   interact('pump','terminal','Turnwater pump controller',[-27.5,-7.2,-57.5],{description:'Pressure control for the ward’s recycled-water system.'});
   interact('cache','container','Sealed recovery cache',[-19.3,-7.2,-60.9],{description:'A lost transit container wedged beside the maintenance route.'});
   interact('grid_switch','switch','Service-grid bypass',[-60.6,-7.2,-63.1],{description:'A manual bypass linking the pump and rooftop relay circuits.'});
@@ -1015,7 +1036,7 @@ export function generateDistrict(seed = 73191) {
   }
 
   // Utility spines connect shops, mains, and overhead networks; no decorative dead-end cables.
-  const polePoints=[[-22,-29],[-21,-1],[-20,22],[-4,42],[17,-20],[41,-27],[53,5],[47,39],[27,48],[-61,-29],[-59,23],[-36,27]];
+  const polePoints=[[-22,-29],[-21,-1],[-20,22],[-4,42],[17,-20],[41,-27],[56,5],[44.6,39],[27,48],[-61,-29],[-59,23],[-36,27]];
   polePoints.forEach(([x,z],i)=>{
     solid(`utility_pole_${i}`,x,3.4,z,.14,6.8,.14,C.darkMetal,1,1);
     box(x,3.15,z,.46,.67,.27,C.metal,1,1);box(x,3.23,z+.15,.15,.13,.035,C.yellow,1,2);
@@ -1086,10 +1107,10 @@ export function generateDistrict(seed = 73191) {
     // Thin out remote back corners but keep entrances and every major district route.
     const id=`foot_${ix}_${iz}`;node(id,[x,0,z]);grid.set(`${ix},${iz}`,id);
   }
+  const groundVoids=groundHoles.map(h=>({min:[h[0],0,h[1]],max:[h[2],0,h[3]]}));
   function clearLine(a,b,y=0,r=.35){
-    const dx=b[0]-a[0],dz=b[2]-a[2],n=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.65));
-    for(let i=0;i<=n;i++){const t=i/n,x=a[0]+dx*t,z=a[2]+dz*t;if(!groundClear(x,z,r))return false;}
-    return true;
+    return !groundVoids.some(h=>segmentIntersectsFootprint(a,b,h.min,h.max,r+.15)) &&
+      !groundSolids.some(c=>segmentIntersectsFootprint(a,b,c.min,c.max,r));
   }
   for(const[key,id]of grid){
     const[ix,iz]=key.split(',').map(Number);
@@ -1148,9 +1169,23 @@ export function generateDistrict(seed = 73191) {
   }
   // Long-range abstraction graph for autonomous drones, kept separate from walking navigation.
   const airRoute=[];
+  const flightClearance=2.2;
+  const clearAirLink=(aId,bId)=>{
+    const a=nodeIndex.get(aId).position,b=nodeIndex.get(bId).position;
+    let cruiseY=Math.max(a[1],b[1]),needsClearance=false;
+    for(const c of colliders)if(segmentIntersectsFootprint(a,b,c.min,c.max,1.0)&&c.max[1]+flightClearance>Math.min(a[1],b[1])){cruiseY=Math.max(cruiseY,c.max[1]+flightClearance);needsClearance=true;}
+    if(!needsClearance){edge(aId,bId);return;}
+    // Rise outside the facade, cross above the obstruction, then descend.
+    // Keeping the bend points explicit prevents drones interpolating through towers.
+    const highA=Math.abs(a[1]-cruiseY)<.001?aId:node(`${aId}_${bId}_clear_a`,[a[0],cruiseY,a[2]],'air');
+    const highB=Math.abs(b[1]-cruiseY)<.001?bId:node(`${aId}_${bId}_clear_b`,[b[0],cruiseY,b[2]],'air');
+    edge(aId,highA);edge(highA,highB);edge(highB,bId);
+  };
   for(let iz=0;iz<4;iz++)for(let ix=0;ix<5;ix++){
-    const id=node(`air_${ix}_${iz}`,[-67+ix*33,28+(ix%2)*6,-55+iz*36],'air');airRoute.push(id);
-    if(ix)edge(id,`air_${ix-1}_${iz}`);if(iz)edge(id,`air_${ix}_${iz-1}`);
+    const p=[-67+ix*33,28+(ix%2)*6,-55+iz*36];
+    for(const c of colliders)if(segmentIntersectsFootprint(p,p,c.min,c.max,1.0))p[1]=Math.max(p[1],c.max[1]+flightClearance);
+    const id=node(`air_${ix}_${iz}`,p,'air');airRoute.push(id);
+    if(ix)clearAirLink(id,`air_${ix-1}_${iz}`);if(iz)clearAirLink(id,`air_${ix}_${iz-1}`);
   }
 
   return {

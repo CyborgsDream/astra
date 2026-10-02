@@ -1,0 +1,45 @@
+{
+  "source": "/workspace/scratch/0e54ad0a22f3/astra-site",
+  "seed": 73191,
+  "seconds": 300,
+  "population": {
+    "npcCount": 53,
+    "trafficCount": 14
+  },
+  "movingWalkers": 48,
+  "totalWalkers": 48,
+  "roadNodes": 18,
+  "roadComponents": 1,
+  "roadWidths": [
+    4.2,
+    5.5,
+    6.5
+  ],
+  "physicalRoadWidths": [
+    4.2,
+    5.5,
+    6.5
+  ],
+  "issues": {
+    "pedestrians": {
+      "count": 0,
+      "examples": []
+    },
+    "vehicles": {
+      "count": 0,
+      "examples": []
+    },
+    "drones": {
+      "count": 0,
+      "examples": []
+    },
+    "unsupported": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  "airEdges": 37,
+  "obstructedAirEdges": [],
+  "routeFailures": [],
+  "passed": true
+}

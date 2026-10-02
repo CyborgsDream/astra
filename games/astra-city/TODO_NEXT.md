@@ -1,7 +1,15 @@
 # Prioritized next work
 
-1. Run fresh native-hardware WebGPU shader/runtime validation on a real adapter and record evidence.
-2. Republish the private Switchback Ward Site from this recovered source when the publishing connector is available.
-3. Extend GPU cell residency into asynchronous CPU district loading only when the city grows beyond the current single production district.
-4. Continue content expansion without weakening the density target: additional reachable interiors, routes, missions and district links.
-5. Archive the next validated release checkpoint and keep recovery documentation current.
+## Current release gates
+
+1. Run the final integrated native WebGPU browser check, including all eight mechanical trips and delayed destination streaming.
+2. Refresh release evidence and the six recovery files with the measured outcome.
+3. Publish the existing private Switchback Ward Site and verify deployment success.
+4. Commit the final game to `CyborgsDream/astra`, archive the full release in ASTRA CITY, and save the human-readable release report.
+
+## Subsequent development
+
+1. Measure frame pacing, memory, battery use and extended sessions on physical desktop and Android WebGPU devices.
+2. Play through all story branches manually on those devices and evaluate touch movement and audio.
+3. Expand district content and actor schedules while retaining collision, navigation and performance budgets.
+4. Add independent cell generation if a larger city exceeds the current finite worker-held district.

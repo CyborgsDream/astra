@@ -14,13 +14,14 @@
       "filename": "ASTRA_CITY_checkpoint_20261002_1733_recovered.zip",
       "sourceCommit": "0bf5e486b014e0b8991ec95dd23373a454ab36c6",
       "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1733_recovered.zip",
-      "status": "local",
+      "status": "superseded-local",
       "includesWorkingTree": true,
       "archive": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1733_recovered.zip",
       "bytes": 1219960,
       "files": 55,
       "sha256": "d07a704d77855a6d990177a683ac330d486acc0f1f00540203b290030e502db4",
-      "integrity": "passed"
+      "integrity": "passed",
+      "supersededBy": "m1_recovered"
     },
     {
       "milestone": "m1_recovered",
@@ -28,9 +29,62 @@
       "filename": "ASTRA_CITY_checkpoint_20261002_1734_m1_recovered.zip",
       "sourceCommit": "0bf5e486b014e0b8991ec95dd23373a454ab36c6",
       "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1734_m1_recovered.zip",
+      "status": "archived",
+      "includesWorkingTree": true,
+      "archive": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1734_m1_recovered.zip",
+      "bytes": 1220274,
+      "files": 55,
+      "sha256": "9c5f36773d162d116cdb99b5a914b761e9b341a71db9caf42973d8cea3251c2a",
+      "integrity": "passed",
+      "driveFileId": "1BT2tWRN6RrC5toDgRl3j3lNRgzUPMEQa",
+      "driveUrl": "https://drive.google.com/file/d/1BT2tWRN6RrC5toDgRl3j3lNRgzUPMEQa/view?usp=drivesdk",
+      "githubCommit": "5ed380e230e41464cd406bdbcd357800a389dc5e"
+    },
+    {
+      "milestone": "m2_integrated",
+      "createdAt": "2026-10-02T16:04:43.474Z",
+      "filename": "ASTRA_CITY_checkpoint_20261002_1804_m2_integrated.zip",
+      "sourceCommit": "e601ad3c11d1d5daf5c7d314bda65afbaaf71aec",
+      "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1804_m2_integrated.zip",
+      "status": "archived",
+      "includesWorkingTree": true,
+      "archive": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1804_m2_integrated.zip",
+      "bytes": 1262039,
+      "files": 71,
+      "sha256": "a1e44ff8fed6822dcc14629916a25858ed2374045e14dd62783caf765be1400c",
+      "integrity": "passed",
+      "driveFileId": "1azjJ_C2DJwaGUHs5x68D7I9j9I2IflW-",
+      "driveUrl": "https://drive.google.com/file/d/1azjJ_C2DJwaGUHs5x68D7I9j9I2IflW-/view?usp=drivesdk"
+    },
+    {
+      "milestone": "m3_verified_play",
+      "createdAt": "2026-10-02T16:20:12.883Z",
+      "filename": "ASTRA_CITY_checkpoint_20261002_1820_m3_verified_play.zip",
+      "sourceCommit": "02964cf313609dd12a5d68bed6e22709e7e2b1cd",
+      "archivePath": "/workspace/scratch/0e54ad0a22f3/checkpoints/ASTRA_CITY_checkpoint_20261002_1820_m3_verified_play.zip",
       "status": "local",
       "includesWorkingTree": true
     }
   ],
-  "updatedAt": "2026-10-02T15:34:32.504Z"
+  "updatedAt": "2026-10-02T16:20:12.883Z",
+  "sourceDirectory": "games/astra-city",
+  "stateFileIds": {
+    "PROJECT_STATE.md": "1Z2tYiO2RRbhOcR7Jal1b-gY8HSqLFAdF",
+    "IMPLEMENTED.md": "1vaH7YfMymDn1ONqlD3qmFsu9_tZFQiD0",
+    "TODO_NEXT.md": "1le-Tew2QKiMngi3b1aV4Nd6zt6GFubHW",
+    "BUILD.md": "16dMlvzdn_QRK6_jt5g6wwDWsAVT5zqm1",
+    "CHANGELOG.md": "10PPu1ppn3IB08uIsacc92gKaYyt5FHqB",
+    "cloud/checkpoint-manifest.json": "1YEFFmMDhcnYXNhL9_TIckQ3I0J-r_vbO"
+  },
+  "release": {
+    "version": "1.1.0",
+    "status": "verification",
+    "sourceDirectory": "games/astra-city",
+    "playUrl": "https://astra-city-switchback.azurion.chatgpt.site",
+    "verificationDate": "2026-10-02",
+    "mainBrowser": "passed",
+    "mechanicalTrips": 8,
+    "unitTests": 71,
+    "remainingGate": "Rod-transform repair and coarse architectural detail in streamed-out cells, followed by final visual check and publication"
+  }
 }

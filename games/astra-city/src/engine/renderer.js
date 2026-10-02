@@ -1,9 +1,10 @@
 import { createGeometry, MESH_NAMES } from './geometry.js';
 import { cameraForward, clamp, cross3, dot3, frustumPlanes, invert4, lookAt, multiply4, normalize3, orthographic, packInstance, perspective } from './math.js';
 import { CULL_WGSL, MAIN_WGSL, RAIN_WGSL, SHADOW_WGSL, SKY_WGSL } from './shaders.js';
+import { acquireGPUDevice } from './gpu-device.js';
 
 const INSTANCE_BYTES = 160;
-const FRAME_BYTES = 544;
+const FRAME_BYTES = 560;
 const READBACK_BYTES = 1024;
 const TIMESTAMP_OFFSET = 512;
 const MATERIAL_ROUGHNESS = [0.85, 0.43, 0.15, 0.95, 0.77, 0.93, 0.42, 0.93, 0.62, 0.13, 0.92, 0.87];
@@ -150,6 +151,9 @@ export class Renderer {
     this._renderScale = 1;
     this._wireframe = false;
     this._frameNumber = 0;
+    this._inFlightFrames = 0;
+    this._completedFrames = 0;
+    this._completionWindow = null;
     this._samplingGeneration = 0;
     this._previousFrameTime = null;
     this._pendingCpuMs = 0;
@@ -188,34 +192,18 @@ export class Renderer {
   }
 
   async _initialize() {
-    if (!globalThis.navigator?.gpu) {
-      throw new Error('Native WebGPU is unavailable. Open the city in a browser with WebGPU enabled on a secure origin.');
-    }
-    let adapter = null;
-    const adapterAttempts = [
-      { powerPreference: 'high-performance' },
-      {},
-      { powerPreference: 'low-power' },
-    ];
-    for (const options of adapterAttempts) {
-      try {
-        adapter = await navigator.gpu.requestAdapter(options);
-      } catch (error) {
-        this._recordError(`WebGPU adapter attempt failed: ${describeError(error)}`);
-      }
-      if (adapter) break;
-    }
-    if (!adapter) throw new Error('The browser could not acquire a WebGPU adapter after trying high-performance and default adapters. Check GPU acceleration and WebGPU support.');
-    const features = [];
-    this._timestampsSupported = adapter.features.has('timestamp-query');
-    if (this._timestampsSupported) features.push('timestamp-query');
-    this.device = await adapter.requestDevice({ label: 'ASTRA CITY native WebGPU device', requiredFeatures: features });
+    const acquired = await acquireGPUDevice();
+    const adapter = acquired.adapter;
+    this.adapterAttempts = acquired.attempts;
+    this._timestampsSupported = acquired.timestampsSupported;
+    this.device = acquired.device;
     const device = this.device;
     if (this._disposed) { device.destroy(); throw new Error('Renderer was disposed during initialization.'); }
     const info = adapter.info || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo().catch(() => null) : null);
     this.adapterInfo = info ? { vendor: info.vendor, architecture: info.architecture, device: info.device, description: info.description } : null;
     this._stats.adapter = info ? [info.vendor, info.architecture, info.description].filter(Boolean).join(' / ') || 'WebGPU adapter' : 'WebGPU adapter';
     this._deviceErrorListener = event => {
+      if (this._disposed || this.device !== device) return;
       this.ready = false;
       this._recordError(`WebGPU validation: ${describeError(event.error)}`, true);
     };
@@ -379,6 +367,8 @@ export class Renderer {
     if (this._resourcesInitialized) this._replaceWorld(instances, this._signs);
   }
 
+  setResidentCells(ids) { this._residentCellIds=new Set(ids); }
+
   _replaceWorld(instances, signs) {
     const grouped = splitInstances(instances);
     for (const batch of this._staticBatches) batch.destroy();
@@ -424,6 +414,9 @@ export class Renderer {
   }
 
   _drawSignAtlas(signs) {
+    const signature=JSON.stringify(signs);
+    if(this._signAtlasSignature===signature)return;
+    this._signAtlasSignature=signature;
     const canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(2048, 1024) : document.createElement('canvas');
     canvas.width = 2048;
     canvas.height = 1024;
@@ -576,12 +569,15 @@ export class Renderer {
     frustumPlanes(this._viewProjection, f, 84);
     frustumPlanes(this._lightViewProjection, f, 108);
     f.set([...center, 0.00125 + cloudiness * 0.0008 + rain * 0.00055], 132);
+    f.set([clamp(Number(options.lightingDebug)||0,0,3),0,0,0],136);
     this.device.queue.writeBuffer(this._frameBuffer, 0, f);
     return { rain };
   }
 
+  canRender() { return this.ready && !this._disposed && this._inFlightFrames < 2; }
+
   render(camera, environment = {}, options = {}) {
-    if (!this.ready || this._disposed) return false;
+    if (!this.canRender()) return false;
     const start = clock();
     const device = this.device;
     const scoped = this._frameNumber < 3 || this._frameNumber % 120 === 0;
@@ -670,9 +666,26 @@ export class Renderer {
         }
       }
       device.queue.submit([encoder.finish()]);
+      this._inFlightFrames++;
+      if(!this._completionWindow)this._completionWindow={start,frames:0};
+      device.queue.onSubmittedWorkDone().then(()=>{
+        if(this._disposed || this.device!==device)return;
+        this._inFlightFrames=Math.max(0,this._inFlightFrames-1);
+        this._completedFrames++;
+        const window=this._completionWindow;
+        if(!window)return;
+        window.frames++;
+        const elapsed=clock()-window.start;
+        if(elapsed>=400){this._stats.frameMs=elapsed/window.frames;this._completionWindow={start:clock(),frames:0};}
+      }).catch(error=>{
+        if(this._disposed || this.device!==device)return;
+        this._inFlightFrames=Math.max(0,this._inFlightFrames-1);
+        this.ready=false;
+        this._recordError(`GPU submission failed: ${describeError(error)}`,true);
+      });
       this._frameNumber++;
       if (readback) this._collectStats(readback, batches.map(batch => ({ mesh: batch.meshName, count: batch.count })), this._frameNumber, this._samplingGeneration, wireframe);
-      this._stats.frameMs = this._previousFrameTime === null ? 0 : start - this._previousFrameTime;
+      this._stats.submissionFrameMs = this._previousFrameTime === null ? 0 : start - this._previousFrameTime;
       this._previousFrameTime = start;
       this._stats.cpuMs = clock() - start + this._pendingCpuMs;
       this._pendingCpuMs = 0;
@@ -681,11 +694,11 @@ export class Renderer {
       if (scopeOpen) {
         scopeOpen = false;
         device.popErrorScope().then(error => {
-          if (error && !this._disposed) {
+          if (error && !this._disposed && this.device === device) {
             this.ready = false;
             this._recordError(`WebGPU frame validation failed: ${error.message}`, true);
           }
-        }).catch(error => { if (!this._disposed) this._recordError(`WebGPU error-scope failure: ${describeError(error)}`, true); });
+        }).catch(error => { if (!this._disposed && this.device === device) this._recordError(`WebGPU error-scope failure: ${describeError(error)}`, true); });
       }
       return true;
     } catch (error) {
@@ -731,9 +744,10 @@ export class Renderer {
 
   getStats() {
     return { ...this._stats, backend: 'WebGPU', instances: this._staticCount + this._dynamicCount,
-      memoryBytes: this._memoryBytes, loadedCells: this._loadedCells.size,
+      memoryBytes: this._memoryBytes, loadedCells: this._residentCellIds?.size ?? this._loadedCells.size,
       renderWidth: this._width ?? 0, renderHeight: this._height ?? 0, samples: this._sampleCount,
       quality: this._qualityName, timestampQueries: Boolean(this._timestampsSupported),
+      inFlightFrames: this._inFlightFrames, completedFrames: this._completedFrames, submittedFrames:this._frameNumber,
     };
   }
 
@@ -781,8 +795,11 @@ export class Renderer {
   }
 
   _destroyResources() {
+    this._samplingGeneration++;
     const device = this.device;
     this.device = null;
+    this._inFlightFrames=0;this._completionWindow=null;
+    this._signAtlasSignature=null;
     this._resourcesInitialized = false;
     for (const resource of this._resourceBytes.keys()) resource.destroy();
     this._resourceBytes.clear();
@@ -810,6 +827,7 @@ export class Renderer {
     this._dynamicInstances = [];
     this._signs = [];
     this._staticCount = this._dynamicCount = 0;
+    this._residentCellIds=null;
   }
 }
 

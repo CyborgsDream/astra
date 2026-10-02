@@ -1,7 +1,8 @@
 # ASTRA CITY native WebGPU renderer asset
 
-Copy these four modules together into `src/engine/`:
+Copy these five modules together into `src/engine/`:
 
+- `gpu-device.js` — supported-adapter selection and optional-feature fallback.
 - `renderer.js` — the public `Renderer` class, GPU resources, batching, frame orchestration, sign atlas, and measured statistics.
 - `shaders.js` — native WGSL modules for visibility compaction, shadow depth, material lighting, atmosphere, rain, and diagnostic mesh edges.
 - `geometry.js` — position/normal/UV meshes and edge index buffers.
@@ -19,14 +20,14 @@ await renderer.init();                    // Rejects with a meaningful startup e
 renderer.setWorld(world.instances, world.signs);
 renderer.setDynamic(population.instances());
 renderer.render(camera, environment, {
-  quality: 'medium', renderScale: 1, fog: true, wireframe: false,
+  quality: 'medium', renderScale: 1, fog: true, wireframe: false, lightingDebug: 0,
 });
 const stats = renderer.getStats();
 renderer.resize(0.8);
 renderer.dispose();
 ```
 
-`setWorld` and `setDynamic` can be called before initialization; their most recent values are uploaded at the end of `init`. Rendering is synchronous once initialized. `render` returns `false` while unavailable and `true` after a submitted frame. JavaScript frame failures throw, mark the renderer unavailable, and report an error. Disposal is idempotent. An explicit `init` after a device loss recreates resources from the last supplied world and dynamic arrays.
+`setWorld` and `setDynamic` can be called before initialization; their most recent values are uploaded at the end of `init`. Command encoding is synchronous; GPU execution is asynchronous. `canRender()` reports whether another frame fits the two-frame queue. `render` returns `false` while unavailable or when that queue is full, and `true` after submission. JavaScript frame failures throw, mark the renderer unavailable, and report an error. Disposal is idempotent. An explicit `init` after a device loss recreates resources from the last supplied world and dynamic arrays.
 
 `ready`, `errors`, `lastError`, and `compilationMessages` are exposed. Native WGSL compilation information includes module name, severity, line, and column. Initialization and sampled frames use GPU validation error scopes; uncaptured errors are also recorded. Real device loss marks the renderer unavailable and dispatches `CustomEvent('astra-gpu-error', { detail: message })`. Intentional disposal does not announce an error.
 
@@ -56,7 +57,7 @@ The quality tiers are:
 
 Structure detail level zero follows the camera far plane. Detail thresholds account for the instance's bounds radius, which avoids prematurely removing large facades. The directional map is snapped to world-space texels for translation stability. PCF uses one, four, or nine fixed comparison taps by quality; the shadow boundary fades over a narrow border. It is one local directional map, not a cascaded shadow system. Distant buildings therefore retain illumination and atmosphere without distant small-object shadows.
 
-The diagnostic wireframe option uses native line-list pipelines with actual mesh edge index buffers. It does not depend on a nonexistent WebGPU polygon wireframe mode.
+The diagnostic lighting selector exposes lit output, surface normals, base colour and direct-light/shadow response. The diagnostic wireframe option uses native line-list pipelines with actual mesh edge index buffers. It does not depend on a nonexistent WebGPU polygon wireframe mode.
 
 ## Appearance
 
@@ -72,13 +73,13 @@ The semantic sign atlas uses Canvas2D, 8 columns by 16 rows, and 256×64-pixel t
 
 The required fields are returned with additional diagnostic context:
 
-- `frameMs`: interval between actual render submissions, using the monotonic CPU clock; the first interval is zero.
+- `frameMs`: elapsed time divided by completed GPU frames over a sampling window of at least 400 milliseconds. This measures completed work rather than animation callbacks. `submissionFrameMs` and `simulationFrameMs` distinguish submission and simulation pacing.
 - `cpuMs`: measured CPU encoding time plus dynamic instance packing/upload time since the preceding render.
 - `gpuMs`: native timestamps, in milliseconds, only when the adapter exposes `timestamp-query`; otherwise `null`. The interval spans compute culling, the shadow pass, and the final color pass. No FPS-derived GPU estimate is used.
 - `visibleObjects`, `triangles`, `shadowVisibleObjects`, `shadowTriangles`, and `lines`: asynchronous readback of the actual GPU indirect counts, multiplied by known mesh topology. The main `triangles` field excludes the shadow pass. In wireframe mode it is zero and `lines` describes the submitted main geometry.
 - `statsSampleFrame` identifies the last completed readback, normally sampled every twelve submitted frames. `visibilityPending` is true before a valid sample arrives. Counts therefore describe the most recently completed sample, not an invented current-frame estimate.
 - `drawCalls` and `computeDispatches`: actual encoded API commands; a culled-to-zero indirect call still counts as a draw command.
-- `instances`: supplied static plus dynamic live instances. `loadedCells`: unique static instance cell labels.
+- `instances`: supplied static plus dynamic resident instances. `loadedCells`: explicit detailed-cell residency from `setResidentCells(ids)`; the permanent structure may retain tags from all sixteen cells. `inFlightFrames`, `submittedFrames` and `completedFrames` expose the bounded queue.
 - `memoryBytes`: allocated buffer sizes and nominal texture footprints owned by the renderer. This is derived GPU resource memory, not a measurement of driver overhead or presentation-chain memory. `depth24plus` uses its nominal four-byte footprint.
 - `adapter`, `renderWidth`, `renderHeight`, `samples`, `quality`, and `timestampQueries` make the measurement context explicit.
 
@@ -98,7 +99,7 @@ node --test renderer.test.mjs
 
 The six CPU tests cover every primitive's outward triangle winding, finite vertex data, WebGPU near/far planes, the integration yaw convention, inverse view-projection, conservative rotated nonuniform bounds, inverse-transpose normals, and API availability. These tests address mathematical failure cases that can otherwise survive JavaScript syntax checks.
 
-The integration owner additionally compiled and rendered the initial complete renderer on an actual native WebGPU Chromium/SwiftShader adapter. Shader compilation and GPU validation passed after renaming WGSL's reserved identifier `patch` to `repairPatch`. The initial city view reported roughly 21,000 GPU-visible instances, half a million main triangles, 17 draw commands, and 58 MB of nominal owned GPU resources at 1280×720 medium quality. Those are observations from the owner's initial scene, not guarantees or a hardware GPU benchmark. The owner is testing the subsequent focused color and surface-depth tuning in the same real GPU harness.
+Current and historical native WebGPU execution evidence is recorded in `docs/validation.md` and `docs/evidence/`. Software-adapter checks establish shader/runtime behavior, not physical desktop or phone performance.
 
 ## Deliberate limits
 

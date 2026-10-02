@@ -4,8 +4,8 @@ import {PlayerInput} from './engine/input.js';
 import {Navigation,projectPoint} from './engine/navigation.js';
 import {CityAudio} from './engine/audio.js';
 import {Population} from './world/population.js';
-import {selectResidentCells} from './world/residency.js';
 import {SecuritySystem} from './world/security.js';
+import {createWorldStream} from './world/cell-stream.js';
 import {GameState} from './game/state.js';
 import {QUESTS,ITEMS,FACTIONS} from './game/content.js';
 import {GameUI} from './ui/ui.js';
@@ -21,11 +21,11 @@ const audio=new CityAudio();
 const errors=[];
 const metrics={generationMs:0,initMs:0,frames:0,frameMs:16.7,cpuMs:0,maxFrameMs:0,autoSaves:0};
 let world,collision,player,population,navigation,security,input;
+let worldStream=null;
 let mode='loading',hasSave=false,started=false,nearby=null,objective=null,waypoint=null;
 let renderTime=0,lastFrame=performance.now(),uiClock=0,saveClock=0,discoveryClock=0,routeClock=0;
 let route=[],scannerTime=0,debugEnabled=false,performanceEnabled=false,worldClockFrozen=false,detailLevel=2;
 let adaptiveScale=1,slowFrames=0,fastFrames=0,saveErrorShown=false,frameRequest=0;
-let residentCellSignature='',residentCellIds=new Set(),residencyClock=0;
 let repairSession=null,dialogueTarget=null,transition=null,disposal=false;
 let openedSignature='',disposeAgentTools=()=>{};
 let camera,menuCamera,environment={time:0,hour:15.5,weather:'clear',wetness:0};
@@ -44,21 +44,10 @@ window.addEventListener('unhandledrejection',e=>{errors.push(String(e.reason?.me
 window.addEventListener('astra-gpu-error',e=>fatal(`Graphics device interrupted. ${e.detail || ''}`));
 
 async function generateWorld(seed) {
-  return new Promise((resolve,reject)=>{
-    let url;
-    try {
-      url=window.__ASTRA_WORKER_SOURCE__ ? URL.createObjectURL(new Blob([window.__ASTRA_WORKER_SOURCE__],{type:'text/javascript'})) : new URL('./world-worker.js',document.baseURI).href;
-      const worker=new Worker(url,{type:window.__ASTRA_WORKER_SOURCE__?'classic':'module'});
-      const finish=()=>{worker.terminate();if(window.__ASTRA_WORKER_SOURCE__)URL.revokeObjectURL(url);};
-      worker.onmessage=event=>{
-        const value=event.data;
-        if(value.type==='world'){metrics.generationMs=value.generationMs;finish();resolve(value.world);}
-        else if(value.type==='error'){finish();reject(new Error(value.message));}
-      };
-      worker.onerror=event=>{finish();reject(new Error(`District generation failed: ${event.message}`));};
-      worker.postMessage({seed});
-    } catch(error) {if(url?.startsWith('blob:'))URL.revokeObjectURL(url);reject(error);}
-  });
+  const stream=await createWorldStream(seed);
+  if(disposal || mode==='error'){stream.dispose();throw new Error('City startup was interrupted.');}
+  worldStream=stream;metrics.generationMs=stream.generationMs;
+  return stream.world;
 }
 
 async function init() {
@@ -67,10 +56,10 @@ async function init() {
     ui.loading('Preparing Switchback Ward',.08);
     hasSave=game.hasSave();
     if(hasSave && !game.load())hasSave=false;
-    const worldTask=generateWorld(game.data.seed || 73191);
-    await renderer.init();
+    const worldTask=generateWorld(game.data.seed ?? 73191);
+    const [,generatedWorld]=await Promise.all([renderer.init(),worldTask]);
     ui.loading('Connecting streets, rooftops and the undercroft',.32);
-    world=await worldTask;
+    world=generatedWorld;
     collision=new CollisionWorld(world.colliders,world.ramps);
     navigation=new Navigation(world);
     player=new PlayerController(collision,world.spawn);
@@ -78,15 +67,24 @@ async function init() {
     else game.setPlayer(player.position,player.yaw,player.pitch);
     collision.setOpen(game.data.world.opened);
     openedSignature=[...(game.data.world.opened || [])].sort().join('|');
-    population=new Population(world,world.seed);
+    population=new Population(world,world.seed,collision);
     security=new SecuritySystem(world,collision);
     environment.hour=Number.isFinite(game.data.world.hour)?game.data.world.hour:15.5;
     environment.weather=game.data.world.weather || 'clear';
-    ui.loading('Preparing city materials and lighting',.62);
-    updateResidency(true);
+    ui.loading('Loading the market, nearby streets and rooftop detail',.62);
+    worldStream.update(world.spawn.position,{force:true});
+    await worldStream.whenSettled();
+    worldStream.onChange=()=>{
+      if(disposal || !renderer.ready || mode==='error')return;
+      uploadVisibleWorld();
+      // Keep an enclosed ride hidden until a frame using its destination detail completes.
+      if(transition?.arrived)transition.requiredFrame=renderer.getStats().submittedFrames+1;
+    };
+    worldStream.onError=error=>fatal(`District streaming failed. ${error.message}`);
+    await uploadVisibleWorld();
     population.update(.02,player,environment);
     renderer.setDynamic(population.instances());
-    input=new PlayerInput(canvas,{press:onKey,look:(x,y)=>player.look(x,y,game.data.settings.sensitivity,game.data.settings.invertY),unlock:()=>{if(mode==='playing' && !ui.isOpen && !transition)openPanel('pause');},blur:()=>{if(mode==='playing' && !ui.isOpen)openPanel('pause');},lockUnavailable:()=>ui.toast('Drag on the city to look around.','info')});
+    input=new PlayerInput(canvas,{press:onKey,look:(x,y)=>player.look(x,y,game.data.settings.sensitivity,game.data.settings.invertY),unlock:()=>{if(mode==='playing' && !ui.isOpen && !transition && !debugEnabled)openPanel('pause');},blur:()=>{if(mode==='playing' && !ui.isOpen && !transition && !debugEnabled)openPanel('pause');},lockUnavailable:()=>ui.toast('Drag on the city to look around.','info')});
     input.enabled=false;
     ui.setWorld?.(world);
     menuCamera={position:[world.spawn.position[0],world.spawn.position[1]+1.75,world.spawn.position[2]],yaw:world.spawn.yaw||0,pitch:world.spawn.pitch||.06,fov:75,near:.06,far:950};
@@ -105,7 +103,10 @@ async function init() {
 }
 
 function fatal(message) {
-  errors.push(message);mode='error';input?.release();
+  if(!errors.includes(message))errors.push(message);
+  mode='error';cancelAnimationFrame(frameRequest);input?.release();worldStream?.dispose();
+  if(started && player)saveGame(false);
+  if(window.__ASTRA__)window.__ASTRA__.ready=false;
   ui.showError(message);
   window.__ASTRA_BOOT_ERROR__=message;
 }
@@ -120,10 +121,15 @@ function startGame(fresh=false,confirmed=false) {
     if(!reset.ok){handleResult(reset);return;}
     player.restore({...world.spawn});
     player.position=[...world.spawn.position];player.checkpoint=[...world.spawn.position];
+    player.freeCamera=false;debugEnabled=false;document.getElementById('developer-controls')?.remove();
+    transition=null;transitionScreen.style.display='none';repairSession=null;dialogueTarget=null;
+    scannerTime=0;saveClock=0;routeClock=0;discoveryClock=0;renderTime=0;
+    security.exposure=0;security.damageClock=0;for(const sensor of security.sensors)sensor.alert=0;
     game.setPlayer(player.position,player.yaw,player.pitch);
     collision.setOpen([]);
     openedSignature='';
-    updateResidency(true);
+    worldStream.update(player.position,{force:true});
+    uploadVisibleWorld();
     waypoint=null;route=[];
   } else if(!started && hasSave) player.restore(game.data.player);
   started=true;mode='playing';ui.closePanel();ui.setPlaying(true);input.enabled=true;
@@ -152,6 +158,7 @@ function showDialogue(data) {ui.dialogue(data);pauseInput();}
 function onKey(code,event={}) {
   if(mode==='loading'||mode==='error')return;
   if(code==='F3'){event.preventDefault?.();performanceEnabled=!performanceEnabled;return;}
+  if(transition){event.preventDefault?.();return;}
   if(code==='F4'){event.preventDefault?.();toggleDebug();return;}
   if(code==='Escape'){
     event.preventDefault?.();
@@ -175,8 +182,8 @@ function onKey(code,event={}) {
 
 async function onAction(action,payload={}) {
   try {
-    if(action==='retry-startup'){window.location.reload();return;}
-    else if(action==='new-game')startGame(true);
+    if(action==='retry-startup'){location.reload();return;}
+    if(action==='new-game')startGame(true);
     else if(action==='confirm-new')startGame(true,true);
     else if(action==='continue')startGame(false);
     else if(action==='resume'||action==='close-panel')resume();
@@ -258,7 +265,7 @@ function syncOpenedDoors() {
   const next=[...(game.data.world.opened || [])].sort().join('|');
   if(next===openedSignature)return;
   openedSignature=next;collision.setOpen(game.data.world.opened);
-  updateResidency(true);
+  uploadVisibleWorld();
 }
 
 function showEnding(ending) {
@@ -292,6 +299,7 @@ function closestInteraction() {
 }
 
 function interact() {
+  if(transition || player.travel)return;
   if(player.riding){toggleVehicle();return;}
   const target=closestInteraction();
   if(!target){ui.toast('Move closer and face a person, door or terminal.');return;}
@@ -318,9 +326,13 @@ function interact() {
     const text='Board the ward shuttle. Travel is free for registered district couriers.';
     showDialogue({name:target.name,role:'Ward transit',text,choices:[...destinations.map((d,i)=>({id:`stop-${i}`,label:d.name,description:`${Math.round(distance(target.position,d.position))} metres`,action:'travel',payload:{position:d.position,name:d.name}})),{id:'stay',label:'Stay here',action:'resume'}]});return;
   }
-  if(target.type==='elevator'||target.type==='ladder'){
-    const to=target.target || target.destinations?.[0]?.position;
-    if(to){player.moveTo(to,clamp(distance(player.position,to)/(target.type==='ladder'?2.5:4),1,6),target.type);ui.toast(target.type==='ladder'?'Climbing the service ladder.':'Lift travelling.');}
+  if(target.type==='elevator')return takeLift(target);
+  if(target.type==='ladder'){
+    if(player.travel)return;
+    const path=target.travelPath;
+    const length=Array.isArray(path)?path.reduce((sum,p,i)=>sum+distance(i?path[i-1]:player.position,p),0):0;
+    if(path&&player.moveAlongPath(path,Math.max(1,length/2.5),'ladder'))ui.toast('Climbing the service ladder.');
+    else ui.toast('Stand on the clear landing in front of this ladder.','info');
     return;
   }
   if(target.type==='door'){
@@ -429,32 +441,40 @@ function toggleVehicle() {
   audio.play('interact');
 }
 
+function takeLift(target) {
+  const to=target.target || target.destinations?.[0]?.position;
+  if(!to?.every(Number.isFinite))return;
+  const floor=collision.floorAt(to,.32,.05,.15);
+  if(!Number.isFinite(floor)||Math.abs(floor-to[1])>.05||collision.blocked(to,.32,1.76)){ui.toast('The lift landing is obstructed.','info');return;}
+  // Enclosed lift interiors are represented by an opaque ride transition.
+  // The player changes landing behind it; no camera flies through architecture.
+  transition={elapsed:0,duration:clamp(distance(player.position,to)/18,2,5),target:[...to],name:target.name,arrived:false,hourDelta:0};
+  worldStream.update(transition.target,{force:true});
+  ui.closePanel();pauseInput();
+  transitionScreen.textContent=`SERVICE LIFT · ${to[1]>player.position[1]?'ASCENDING':'DESCENDING'}`;
+  transitionScreen.style.display='flex';audio.play('interact');
+}
+
 function takeTransit(payload) {
   if(!payload.position?.every(Number.isFinite))return;
   const destination=world.interactables.find(i=>i.type==='transit' && distance(i.position,payload.position)<.1);
   const closeToStop=world.interactables.some(i=>i.type==='transit'&&distance(player.position,i.position)<8);
   if(!destination || !closeToStop){ui.toast('Board at a transit stop to use this route.','error');return;}
   transition={elapsed:0,duration:2,target:[...payload.position],name:payload.name || destination.name,arrived:false};
+  worldStream.update(transition.target,{force:true});
   ui.closePanel();pauseInput();
   transitionScreen.textContent=`WARD TRANSIT · ${transition.name}`;
   transitionScreen.style.display='flex';audio.play('interact');
 }
 
-function visibleWorldInstances() {
-  const opened=new Set(game.data.world.opened || []);
-  const active=residentCellIds.size?residentCellIds:selectResidentCells(world?.cells,player?.position || world?.spawn?.position,1);
-  return world.instances.filter(i=>(i.detail || 0)<=detailLevel && (!i.owner || !opened.has(i.owner)) && (!i.cell || active.has(i.cell)));
+function uploadVisibleWorld() {
+  renderer.setWorld(visibleWorldInstances(),world.signs);
+  renderer.setResidentCells([...worldStream.resident.keys()]);
 }
 
-function updateResidency(force=false) {
-  if(!world || !renderer)return false;
-  const next=selectResidentCells(world.cells,player?.position || world.spawn?.position,1);
-  const signature=[...next].sort().join('|')+`|d${detailLevel}|o${openedSignature}`;
-  if(!force && signature===residentCellSignature)return false;
-  residentCellIds=next;
-  residentCellSignature=signature;
-  renderer.setWorld(visibleWorldInstances(),world.signs);
-  return true;
+function visibleWorldInstances() {
+  const opened=new Set(game.data.world.opened || []);
+  return world.instances.filter(i=>(i.detail || 0)<=detailLevel && (!i.owner || !opened.has(i.owner)));
 }
 
 function updateObjective() {
@@ -493,8 +513,8 @@ function refreshUi() {
 }
 
 function collectStats() {
-  const r=renderer.getStats?.() || {},p=population?.getStats?.() || {};
-  return {...r,...p,fps:1000/Math.max(.01,metrics.frameMs),frameMs:metrics.frameMs,cpuMs:metrics.cpuMs,loadedCells:r.loadedCells || world?.cells.length || 0,worldObjects:world?.instances.length || 0,renderScale:adaptiveScale,collisionQueries:collision?.queries || 0,securityExposure:security?.exposure || 0};
+  const r=renderer.getStats?.() || {},p=population?.getStats?.() || {},stream=worldStream?.getStats() || {};
+  return {...r,...p,...stream,fps:r.frameMs>0?1000/r.frameMs:0,frameMs:r.frameMs || 0,simulationFrameMs:metrics.frameMs,cpuMs:metrics.cpuMs,loadedCells:stream.loadedCells ?? r.loadedCells ?? 0,worldObjects:world?.instanceCount ?? world?.instances.length ?? 0,renderScale:adaptiveScale,collisionQueries:collision?.queries || 0,securityExposure:security?.exposure || 0};
 }
 
 function updateVehicle() {
@@ -539,12 +559,20 @@ function debugInstances() {
   if(dev?.querySelector('[name="cells"]')?.checked){
     for(const cell of world.cells){const b=cell.bounds;if(!b)continue;for(const x of [b[0],b[2]])out.push({mesh:'box',position:[x,.08,(b[1]+b[3])/2],scale:[.05,.05,b[3]-b[1]],color:[.18,.85,.52],material:6,emissive:1});for(const z of [b[1],b[3]])out.push({mesh:'box',position:[(b[0]+b[2])/2,.08,z],scale:[b[2]-b[0],.05,.05],color:[.18,.85,.52],material:6,emissive:1});}
   }
+  if(dev?.querySelector('[name="people"]')?.checked){
+    for(const actor of population.nearby(player.position,48).slice(0,80)){
+      const [x,y,z]=actor.position,h=actor.type==='npc'?1.8:.9;
+      const color=actor.authored?[.96,.74,.24]:actor.type==='npc'?[.23,.9,.56]:[.32,.64,1];
+      for(const dx of [-.4,.4])for(const dz of [-.4,.4])out.push({mesh:'box',position:[x+dx,y+h/2,z+dz],scale:[.025,h,.025],color,material:6,emissive:1});
+      out.push({mesh:'box',position:[x-Math.sin(actor.yaw)*.65,y+.06,z-Math.cos(actor.yaw)*.65],scale:[.05,.05,1.3],rotation:[0,actor.yaw,0],color,material:6,emissive:1});
+    }
+  }
   return out;
 }
 
 function frame(now) {
-  if(disposal)return;
-  frameRequest=requestAnimationFrame(frame);
+  if(disposal || mode==='error' || !renderer.ready)return;
+  try {
   const cpuStart=performance.now(),raw=(now-lastFrame)/1000;
   const dt=clamp(raw,0,.05);lastFrame=now;renderTime+=dt;
   if(Number.isFinite(raw) && raw>0){metrics.frameMs=metrics.frameMs*.94+raw*1000*.06;metrics.maxFrameMs=Math.max(metrics.maxFrameMs,raw*1000);}
@@ -560,22 +588,22 @@ function frame(now) {
     const event=security.update(dt,player,game.data,renderTime);
     if(event.damage){handleResult(game.emit('damage',{amount:event.damage}),true);audio.play('damage');ui.toast(event.message,'error');}
     if(game.data.player.health<=0){
-      player.position=[...player.checkpoint];player.velocity.fill(0);game.emit('restore',{});updateResidency(true);
+      player.position=[...player.checkpoint];player.velocity.fill(0);game.emit('restore',{});
+      worldStream.update(player.position,{force:true});
       ui.toast('Recovered at your safe address. Your equipment and work are retained.','info');security.exposure=0;
     }
-    discoveryClock+=dt;saveClock+=dt;routeClock+=dt;residencyClock+=dt;
+    discoveryClock+=dt;saveClock+=dt;routeClock+=dt;
     if(discoveryClock>1.3){discoveryClock=0;discoverNearby();}
     if(saveClock>30){saveClock=0;saveGame(false);}
     if(routeClock>2){routeClock=0;updateObjective();const goal=waypoint || objective?.position;route=goal?navigation.route(player.position,goal):[];}
-    if(residencyClock>.35){residencyClock=0;updateResidency(false);}
   }else if(debugEnabled && player.freeCamera){
     input.enabled=document.activeElement===canvas || input.pointer;
     player.update(dt,input.state(),game.data);
   }
   if(transition){
     transition.elapsed+=dt;
-    if(transition.elapsed>transition.duration*.5 && !transition.arrived){player.restore({position:transition.target,yaw:player.yaw,pitch:0});game.data.world.hour=(game.data.world.hour+.06)%24;transition.arrived=true;updateResidency(true);}
-    if(transition.elapsed>=transition.duration){transition=null;transitionScreen.style.display='none';saveGame(false);resume();}
+    if(transition.elapsed>transition.duration*.5 && !transition.arrived){player.restore({position:transition.target,yaw:player.yaw,pitch:0});game.data.world.hour=(game.data.world.hour+(transition.hourDelta??.06))%24;transition.arrived=true;transition.requiredFrame=renderer.getStats().submittedFrames+1;}
+    if(transition.elapsed>=transition.duration && worldStream.getStats().settled && renderer.getStats().completedFrames>=transition.requiredFrame){transition=null;transitionScreen.style.display='none';saveGame(false);resume();}
   }
   environment.time=renderTime;
   environment.hour=game.data.world.hour;
@@ -586,28 +614,43 @@ function frame(now) {
   environment.sunDirection=[Math.cos(sunAngle)*.72,Math.sin(sunAngle),-.45];
   if(mode==='menu')camera={...menuCamera,yaw:menuCamera.yaw+Math.sin(renderTime*.045)*.045};
   else camera=player.camera(game.data.settings.fov || 75);
+  worldStream.update(transition?.target || camera.position);
   if((playing || mode==='menu') && population)population.update(dt,player,environment);
   if(!playing)security.update(0,player,game.data,renderTime);
   updateVehicle();
-  renderer.setDynamic([...population.instances(),...security.instances(),...powerIndicators(),...userVehicle,...debugInstances()]);
   const s=game.data.settings;
   if(s.adaptive!==false && playing){
-    if(metrics.frameMs>29){slowFrames++;fastFrames=0;}else if(metrics.frameMs<17.8){fastFrames++;slowFrames=0;}
+    const renderMs=renderer.getStats().frameMs || metrics.frameMs;
+    if(renderMs>29){slowFrames++;fastFrames=0;}else if(renderMs<17.8){fastFrames++;slowFrames=0;}
     if(slowFrames>90){adaptiveScale=Math.max(.5,adaptiveScale-.08);slowFrames=0;}
     if(fastFrames>600){adaptiveScale=Math.min(s.renderScale || 1,adaptiveScale+.04);fastFrames=0;}
   }
-  renderer.render(camera,environment,{quality:s.quality || 'high',renderScale:adaptiveScale});
+  if(renderer.canRender()){
+    renderer.setDynamic([...population.instances(),...security.instances(),...powerIndicators(),...userVehicle,...debugInstances()]);
+    renderer.render(camera,environment,{quality:s.quality || 'medium',renderScale:adaptiveScale,wireframe:debugEnabled && Boolean(document.querySelector('#developer-controls [name="wireframe"]')?.checked),lightingDebug:debugEnabled?Number(document.querySelector('#developer-controls [name="lighting"]')?.value)||0:0});
+  }
   if(playing)audio.update(dt,player,environment,{speed:player.speed,grounded:player.grounded,interior:player.position[1]<-1 || ['home','workshop','clinic'].includes(currentLocation().id),riding:player.riding});
   drawNavigation();
   uiClock+=dt;
   if(uiClock>.14){uiClock=0;nearby=playing?closestInteraction():nearby;refreshUi();ui.setPerformance(collectStats(),performanceEnabled);if(debugEnabled)refreshDebug();}
   metrics.cpuMs=performance.now()-cpuStart;
+  if(!disposal && mode!=='error' && renderer.ready)frameRequest=requestAnimationFrame(frame);
+  } catch(error) {fatal(error.message || String(error));}
 }
 
 function drawNavigation() {
   const width=innerWidth,height=innerHeight,dpr=Math.min(devicePixelRatio || 1,2);
   if(overlay.width!==Math.round(width*dpr)||overlay.height!==Math.round(height*dpr)){overlay.width=Math.round(width*dpr);overlay.height=Math.round(height*dpr);}
   const ctx=overlayContext;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
+  if(debugEnabled && document.querySelector('#developer-controls [name="people"]')?.checked){
+    for(const actor of population.nearby(player.position,48).slice(0,80)){
+      const point=projectPoint([actor.position[0],actor.position[1]+2.2,actor.position[2]],camera,width,height);
+      if(!point || point.x<10 || point.x>width-10 || point.y<10 || point.y>height-10)continue;
+      const label=`${actor.name || actor.role} · ${actor.speed.toFixed(1)} m/s`;
+      ctx.font='13px system-ui';ctx.textAlign='center';ctx.fillStyle='#0c151c';
+      const w=ctx.measureText(label).width;ctx.fillRect(point.x-w/2-5,point.y-14,w+10,21);ctx.fillStyle='#d1f3e7';ctx.fillText(label,point.x,point.y);
+    }
+  }
   if(mode!=='playing'||ui.isOpen||debugEnabled)return;
   const targets=[];
   if(objective)targets.push({position:objective.position,label:objective.name || objective.label,color:'#d7b77d',distance:objective.distance});
@@ -638,8 +681,8 @@ function toggleDebug(force) {
   pauseInput();
   if(dev)return;
   dev=document.createElement('aside');dev.id='developer-controls';
-  Object.assign(dev.style,{position:'fixed',top:'12px',right:'12px',width:'330px',maxHeight:'calc(100vh - 24px)',overflow:'auto',background:'rgba(12,21,18,.97)',color:'#d6e8dd',padding:'22px',font:'14px/1.55 system-ui',zIndex:60,boxShadow:'0 10px 70px #0008'});
-  dev.innerHTML=`<h2 style="margin:0 0 18px;font-size:18px">Development controls</h2><label>World time <input name="hour" type="range" min="0" max="23.99" step=".1" value="${environment.hour}" style="width:100%"></label><label>Weather <select name="weather"><option value="clear">Clear</option><option value="overcast">Overcast</option><option value="rain">Rain</option></select></label><p><label><input name="freeze" type="checkbox"> Freeze world clock</label><br><label><input name="free" type="checkbox"> Free camera (Space up, C down)</label><br><label><input name="colliders" type="checkbox"> Collision geometry</label><br><label><input name="cells" type="checkbox"> World cells</label><br><label><input name="perf" type="checkbox"> Performance measurements</label></p><label>Detail inspection <select name="detail"><option value="2">All geometry</option><option value="1">Architecture and façades</option><option value="0">Structural geometry</option></select></label><p><label>Teleport <select name="teleport"><option value="">Choose location</option></select></label></p><button name="spawn">Add nearby pedestrian</button><button name="recover">Return to safe address</button><pre id="developer-stats" style="font:12px/1.5 monospace;white-space:pre-wrap"></pre><button name="close">Close · F4</button>`;
+  Object.assign(dev.style,{position:'fixed',top:'12px',right:'12px',width:'min(330px, calc(100vw - 24px))',maxHeight:'calc(100vh - 24px)',overflow:'auto',background:'rgba(12,21,18,.97)',color:'#d6e8dd',padding:'22px',font:'14px/1.55 system-ui',zIndex:60,boxShadow:'0 10px 70px #0008'});
+  dev.innerHTML=`<h2 style="margin:0 0 18px;font-size:18px">Development controls</h2><label>World time <input name="hour" type="range" min="0" max="23.99" step=".1" value="${environment.hour}" style="width:100%"></label><label>Weather <select name="weather"><option value="clear">Clear</option><option value="overcast">Overcast</option><option value="rain">Rain</option></select></label><p><label><input name="freeze" type="checkbox"> Freeze world clock</label><br><label><input name="free" type="checkbox"> Free camera (Space up, C down)</label><br><label><input name="colliders" type="checkbox"> Collision geometry</label><br><label><input name="cells" type="checkbox"> World cells</label><br><label><input name="people" type="checkbox"> Population bounds and headings</label><br><label><input name="wireframe" type="checkbox"> Mesh edges</label><br><label><input name="perf" type="checkbox"> Performance measurements</label></p><label>Lighting inspection <select name="lighting"><option value="0">Lit scene</option><option value="1">Surface normals</option><option value="2">Base colours</option><option value="3">Sunlight and shadows</option></select></label><br><label>Detail inspection <select name="detail"><option value="2">All geometry</option><option value="1">Architecture and façades</option><option value="0">Structural geometry</option></select></label><p><label>Teleport <select name="teleport"><option value="">Choose location</option></select></label></p><button name="spawn">Add nearby pedestrian</button><button name="recover">Return to safe address</button><pre id="developer-stats" style="font:12px/1.5 monospace;white-space:pre-wrap"></pre><button name="close">Close · F4</button>`;
   document.body.appendChild(dev);
   dev.querySelector('[name="weather"]').value=environment.weather;
   for(const loc of world.locations){const o=document.createElement('option');o.value=loc.id;o.textContent=loc.name;dev.querySelector('[name="teleport"]').appendChild(o);}
@@ -650,7 +693,7 @@ function toggleDebug(force) {
     else if(el.name==='freeze')worldClockFrozen=el.checked;
     else if(el.name==='free'){player.freeCamera=el.checked;if(el.checked){input.enabled=true;canvas.focus();input.requestLock();}}
     else if(el.name==='perf')performanceEnabled=el.checked;
-    else if(el.name==='detail'){detailLevel=Number(el.value);updateResidency(true);}
+    else if(el.name==='detail'){detailLevel=Number(el.value);uploadVisibleWorld();}
     else if(el.name==='teleport'&&el.value){const loc=world.locations.find(i=>i.id===el.value);player.restore({position:loc.position,yaw:player.yaw,pitch:0});}
   });
   dev.querySelector('[name="close"]').onclick=()=>toggleDebug(false);
@@ -666,13 +709,13 @@ function refreshDebug() {
 
 function exposeDevelopmentApi() {
   window.__ASTRA__={
-    version:'1.0.0',ready:true,renderer,game,world,collision,player,population,navigation,security,ui,errors,metrics,
+    version:'1.1.0',ready:true,renderer,game,world,worldStream,collision,player,population,navigation,security,ui,errors,metrics,
     getStats:collectStats,getMode:()=>mode,getObjective:()=>objective,getNearby:closestInteraction,
     save:()=>saveGame(false),load:()=>{const ok=game.load();if(ok){player.restore(game.data.player);syncOpenedDoors();}return ok;},
     start:()=>startGame(false),interact,onAction,
-    teleport:id=>{const p=typeof id==='string'?(world.interactables.find(i=>i.id===id)?.position || world.locations.find(i=>i.id===id)?.position):id;if(!p)return false;player.restore({position:[...p],yaw:player.yaw,pitch:0});updateResidency(true);return true;},
-    renderAt:async(position,yaw,pitch=0)=>{player.restore({position,yaw,pitch});updateResidency(true);mode='playing';ui.setPlaying(true);ui.closePanel();camera=player.camera(game.data.settings.fov);renderer.render(camera,environment,{quality:game.data.settings.quality,renderScale:adaptiveScale});return collectStats();},
-    dispose:()=>{disposal=true;cancelAnimationFrame(frameRequest);disposeAgentTools();input.destroy();audio.dispose();population.dispose();renderer.dispose();ui.destroy();}
+    teleport:id=>{const p=typeof id==='string'?(world.interactables.find(i=>i.id===id)?.position || world.locations.find(i=>i.id===id)?.position):id;if(!p)return false;player.restore({position:[...p],yaw:player.yaw,pitch:0});worldStream.update(player.position,{force:true});return true;},
+    renderAt:async(position,yaw,pitch=0)=>{player.restore({position,yaw,pitch});mode='playing';ui.setPlaying(true);ui.closePanel();camera=player.camera(game.data.settings.fov);worldStream.update(position,{force:true});await worldStream.whenSettled();await renderer.device.queue.onSubmittedWorkDone();renderer.render(camera,environment,{quality:game.data.settings.quality,renderScale:adaptiveScale});return collectStats();},
+    dispose:()=>{disposal=true;cancelAnimationFrame(frameRequest);disposeAgentTools();input.destroy();audio.dispose();population.dispose();worldStream?.dispose();renderer.dispose();ui.destroy();}
   };
 }
 

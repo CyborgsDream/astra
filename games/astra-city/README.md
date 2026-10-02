@@ -6,7 +6,7 @@ The city uses an original procedural visual style, native WebGPU rendering, and 
 
 ## Run locally
 
-From the `games/astra-city` directory:
+From the source directory containing `package.json`:
 
 ```bash
 npm install
@@ -15,7 +15,7 @@ npm start
 
 Open [http://localhost:4173](http://localhost:4173). Use a browser that exposes WebGPU and can acquire a GPU adapter. The game must be served from an appropriate secure origin or localhost. There is no WebGL fallback; unsupported devices receive a startup error.
 
-Validation and build commands, also from `games/astra-city`:
+Validation and build commands, from the same source directory:
 
 ```bash
 npm test
@@ -96,8 +96,18 @@ The previous valid save is retained as a backup. Version-one records migrate wit
 
 ## Scope and diagnostics
 
-Switchback is a finite district. Its current default world contains 57,535 static geometry instances, 1,236 colliders, nine ramps, 31 interactables, 12 named locations, 16 cells, and 2,339 navigation nodes. Dynamic people, vehicles, and status indicators add their own geometry.
+Switchback is a finite district. Its current default world contains 57,533 static geometry instances, 1,236 colliders, nine ramps, 31 interactables, 12 named locations, 16 cells, and 2,345 navigation nodes. Dynamic people, vehicles, and status indicators add their own geometry.
 
-All cells remain resident; GPU visibility culling reduces rendering work. F3 displays runtime measurements, and F4 exposes inspection controls. Performance depends on the actual browser, adapter, resolution, and scene. The project does not make a hardware frame-rate guarantee.
+A persistent worker supplies nine nearby detailed cells, with asynchronous loading and eviction. Main building masses and long structural objects stay resident to preserve the district and skyline. GPU visibility culling then selects the geometry needed by each view. F3 displays completed-frame timing, GPU timing when supported, resident cells, population, geometry and queued frames. F4 exposes free camera, teleport, collision and population overlays, cell boundaries, lighting/material/normal views, mesh edges, detail controls, population spawning and time/weather controls. Performance depends on the actual browser, adapter, resolution, and scene. The project does not make a hardware frame-rate guarantee.
 
 See [Architecture and limitations](docs/architecture.md) for the rendering pipeline, module boundaries, measurement definitions, and deliberate omissions.
+
+## Recovery checkpoints
+
+The source is archived at coherent milestones, including this README, all game modules, build and test tools, the portable build, and the six recovery files. Read PROJECT_STATE.md first when resuming. The existing ASTRA player/editor experiment is preserved separately.
+
+```bash
+node tools/checkpoint.mjs milestone_name
+```
+
+The command creates and verifies a complete ZIP in a neighbouring checkpoints directory. The manifest records source commits, byte hashes and cloud locations. Current source lives in [CyborgsDream/astra](https://github.com/CyborgsDream/astra/tree/main/games/astra-city); archives are in the [ASTRA CITY folder](https://drive.google.com/drive/folders/1IrebhwrQ4MianlKJ_JMglHKZRvxwaMyc).

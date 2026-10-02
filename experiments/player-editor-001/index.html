@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ASTRA // WebGPU Player Editor</title>
+<style>
+:root{color-scheme:dark;--bg:#090b0f;--panel:#11151c;--line:#222936;--text:#e8edf5;--muted:#8d98a9;--accent:#86a8ff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+button,input,select,textarea{font:inherit;color:inherit}
+#app{height:100%;display:grid;grid-template-rows:44px 1fr 30px}
+header{display:flex;align-items:center;gap:12px;padding:0 12px;border-bottom:1px solid var(--line);background:#0d1016}
+.brand{font-weight:800;letter-spacing:.16em}
+.tag{color:var(--muted);font-size:12px}
+.spacer{flex:1}
+button,select{background:#171c25;border:1px solid #2a3342;border-radius:5px;padding:6px 9px}
+button:hover{background:#1d2430}
+button.primary{background:#273759;border-color:#3e5d9a}
+main{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 420px}
+#stage{min-width:0;position:relative;background:#000;overflow:hidden}
+canvas{width:100%;height:100%;display:block}
+#hud{position:absolute;left:12px;top:12px;padding:7px 9px;background:#090b0fcc;border:1px solid #ffffff1e;border-radius:4px;font-size:12px;pointer-events:none}
+#hud b{color:#fff}
+aside{min-width:0;display:grid;grid-template-rows:auto auto 1fr;border-left:1px solid var(--line);background:var(--panel)}
+.section{padding:10px 12px;border-bottom:1px solid var(--line)}
+.section-title{font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:8px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+label{display:grid;gap:4px;color:var(--muted);font-size:11px}
+input[type=range]{width:100%}
+.value{color:var(--text);float:right}
+#editorWrap{min-height:0;display:grid;grid-template-rows:34px 1fr 30px}
+#editorBar{display:flex;align-items:center;gap:8px;padding:0 8px;border-bottom:1px solid var(--line)}
+#shader{width:100%;height:100%;resize:none;border:0;outline:0;background:#0b0e13;color:#d7dfeb;padding:12px;tab-size:2;white-space:pre;font-size:12px;line-height:1.45}
+#compiler{padding:6px 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--muted);border-top:1px solid var(--line);font-size:11px}
+#compiler.error{color:#ff8f8f}
+footer{display:flex;align-items:center;gap:12px;padding:0 10px;border-top:1px solid var(--line);background:#0d1016;color:var(--muted);font-size:11px}
+.ok{color:#9fe0a5}.bad{color:#ff8f8f}
+@media(max-width:900px){
+  #app{height:auto;min-height:100%}
+  main{grid-template-columns:1fr;grid-template-rows:56vh minmax(600px,auto)}
+  aside{border-left:0;border-top:1px solid var(--line)}
+  #editorWrap{min-height:420px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="brand">ASTRA</div>
+  <div class="tag">WEBGPU PLAYER / EDITOR · 001</div>
+  <div class="spacer"></div>
+  <select id="preset">
+    <option value="nebula">NEBULA FIELD</option>
+    <option value="grid">VECTOR GRID</option>
+    <option value="tunnel">CHROMA TUNNEL</option>
+  </select>
+  <button id="play">PAUSE</button>
+  <button id="reset">RESET TIME</button>
+</header>
+
+<main>
+  <section id="stage">
+    <canvas id="gpu"></canvas>
+    <div id="hud">
+      <b id="fps">0</b> FPS<br>
+      <span id="res">0 × 0</span><br>
+      <span id="backend">WEBGPU</span>
+    </div>
+  </section>
+
+  <aside>
+    <div class="section">
+      <div class="section-title">SCENE PARAMETERS</div>
+      <div class="controls">
+        <label>Intensity <span class="value" id="intensityV">1.00</span>
+          <input id="intensity" type="range" min="0" max="3" step="0.01" value="1">
+        </label>
+        <label>Scale <span class="value" id="scaleV">1.00</span>
+          <input id="scale" type="range" min="0.1" max="6" step="0.01" value="1">
+        </label>
+        <label>Speed <span class="value" id="speedV">1.00</span>
+          <input id="speed" type="range" min="0" max="4" step="0.01" value="1">
+        </label>
+        <label>Render scale <span class="value" id="renderScaleV">1.00</span>
+          <input id="renderScale" type="range" min="0.35" max="1" step="0.05" value="1">
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="exportScene">EXPORT SCENE</button>
+        <button id="importScene">IMPORT SCENE</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">EDITOR MODEL</div>
+      Live WGSL fragment editing. Press <b>APPLY WGSL</b> to compile a new pipeline without reloading the player.
+    </div>
+
+    <div id="editorWrap">
+      <div id="editorBar">
+        <button class="primary" id="apply">APPLY WGSL</button>
+        <button id="format">RESET PRESET CODE</button>
+        <div class="spacer"></div>
+        <span class="tag">WGSL</span>
+      </div>
+      <textarea id="shader" spellcheck="false"></textarea>
+      <div id="compiler">Waiting for WebGPU…</div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <span id="status">INITIALIZING</span>
+  <span>NO WEBGL FALLBACK</span>
+  <span class="spacer"></span>
+  <span>CYBERNOID / ASTRA</span>
+</footer>
+</div>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const canvas = $('#gpu');
+const status = $('#status');
+const compiler = $('#compiler');
+const shaderEditor = $('#shader');
+const fmt = navigator.gpu?.getPreferredCanvasFormat?.();
+
+const vertexWGSL = `
+struct VSOut {
+  @builtin(position) position: vec4<f32>,
+  @location(0) uv: vec2<f32>,
+};
+
+@vertex
+fn vs(@builtin(vertex_index) i: u32) -> VSOut {
+  var p = array<vec2<f32>, 3>(
+    vec2<f32>(-1.0, -3.0),
+    vec2<f32>(-1.0,  1.0),
+    vec2<f32>( 3.0,  1.0)
+  );
+  var out: VSOut;
+  out.position = vec4<f32>(p[i], 0.0, 1.0);
+  out.uv = p[i] * 0.5 + 0.5;
+  return out;
+}`;
+
+const common = `
+struct Globals {
+  time: f32,
+  intensity: f32,
+  scale: f32,
+  speed: f32,
+  resolution: vec2<f32>,
+  pad: vec2<f32>,
+};
+@group(0) @binding(0) var<uniform> g: Globals;
+`;
+
+const shaders = {
+nebula: common + `
+fn hash(p: vec2<f32>) -> f32 {
+  let h = dot(p, vec2<f32>(127.1,311.7));
+  return fract(sin(h)*43758.5453);
+}
+fn noise(p0: vec2<f32>) -> f32 {
+  let i=floor(p0); let f=fract(p0);
+  let u=f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2<f32>(1,0)),u.x),
+             mix(hash(i+vec2<f32>(0,1)),hash(i+vec2<f32>(1,1)),u.x),u.y);
+}
+fn fbm(p0: vec2<f32>) -> f32 {
+  var p=p0; var a=.5; var v=0.0;
+  for(var i=0;i<5;i=i+1){v+=a*noise(p);p=p*2.02+3.17;a*=.5;}
+  return v;
+}
+@fragment
+fn fs(in: VSOut) -> @location(0) vec4<f32> {
+  let aspect=g.resolution.x/max(g.resolution.y,1.0);
+  var p=(in.uv*2.0-1.0)*vec2<f32>(aspect,1.0);
+  p*=g.scale;
+  let t=g.time*g.speed;
+  let n=fbm(p*1.5+vec2<f32>(t*.06,-t*.035));
+  let m=fbm(p*3.2-vec2<f32>(t*.025,t*.04));
+  let r=length(p);
+  let stars=pow(max(0.0,noise(floor(p*95.0))-0.965)*28.0,3.0);
+  var col=vec3<f32>(.025,.04,.08);
+  col+=vec3<f32>(.12,.28,.62)*pow(n,2.2)*g.intensity;
+  col+=vec3<f32>(.62,.16,.48)*pow(m,3.0)*.7*g.intensity;
+  col+=stars*vec3<f32>(.8,.9,1.0);
+  col*=1.0-smoothstep(.55,1.7,r)*.45;
+  return vec4<f32>(pow(col,vec3<f32>(.85)),1.0);
+}`,
+grid: common + `
+fn line(v:f32,w:f32)->f32{return 1.0-smoothstep(w,w+0.01,abs(fract(v)-.5));}
+@fragment
+fn fs(in:VSOut)->@location(0) vec4<f32>{
+  let aspect=g.resolution.x/max(g.resolution.y,1.0);
+  var p=(in.uv*2.0-1.0)*vec2<f32>(aspect,1.0);
+  let t=g.time*g.speed;
+  let z=1.0/(abs(p.y)+.11);
+  let x=p.x*z;
+  let y=z+t*.7;
+  let gx=line(x*g.scale,.025);
+  let gy=line(y*g.scale,.025);
+  let horizon=exp(-abs(p.y)*12.0);
+  let glow=max(gx,gy)*(.25+.75*horizon)*g.intensity;
+  let axis=exp(-abs(p.x)*90.0)*.8;
+  let col=vec3<f32>(.01,.025,.035)+glow*vec3<f32>(.1,.85,1.0)+axis*vec3<f32>(1.0,.18,.45);
+  return vec4<f32>(col,1.0);
+}`,
+tunnel: common + `
+@fragment
+fn fs(in:VSOut)->@location(0) vec4<f32>{
+  let aspect=g.resolution.x/max(g.resolution.y,1.0);
+  var p=(in.uv*2.0-1.0)*vec2<f32>(aspect,1.0);
+  let t=g.time*g.speed;
+  let a=atan2(p.y,p.x);
+  let r=max(length(p),.001);
+  let q=vec2<f32>(a/6.2831853,1.0/r);
+  let cells=abs(fract(q*vec2<f32>(12.0*g.scale,2.5*g.scale)+vec2<f32>(t*.08,t*.8))-.5);
+  let edge=1.0-smoothstep(.035,.075,min(cells.x,cells.y));
+  let pulse=.5+.5*sin(q.y*2.0-t*3.0);
+  let hue=vec3<f32>(.15+.85*pulse,.25+.55*(1.0-pulse),1.0);
+  let vign=1.0-smoothstep(.2,1.4,r);
+  return vec4<f32>((.018+edge*g.intensity)*hue*vign,1.0);
+}`
+};
+
+let device, context, bindGroup, uniformBuffer, pipeline;
+let running=true, time=0, last=performance.now(), fpsClock=last, fpsFrames=0;
+let selected='nebula';
+
+const params={intensity:1,scale:1,speed:1,renderScale:1};
+
+function setCompiler(msg,error=false){
+  compiler.textContent=msg;
+  compiler.classList.toggle('error',error);
+}
+
+async function makePipeline(source){
+  const module=device.createShaderModule({code:vertexWGSL+'\n'+source});
+  const info=await module.getCompilationInfo();
+  const errors=info.messages.filter(m=>m.type==='error');
+  if(errors.length){
+    setCompiler(errors.map(e=>`L${e.lineNum}:${e.linePos} ${e.message}`).join(' | '),true);
+    return null;
+  }
+  try{
+    const next=await device.createRenderPipelineAsync({
+      layout:'auto',
+      vertex:{module,entryPoint:'vs'},
+      fragment:{module,entryPoint:'fs',targets:[{format:fmt}]},
+      primitive:{topology:'triangle-list'}
+    });
+    setCompiler(info.messages.length ? info.messages.map(m=>m.message).join(' | ') : 'WGSL compiled successfully.');
+    return next;
+  }catch(err){
+    setCompiler(String(err),true); return null;
+  }
+}
+
+async function applyShader(){
+  const next=await makePipeline(shaderEditor.value);
+  if(!next) return;
+  pipeline=next;
+  bindGroup=device.createBindGroup({
+    layout:pipeline.getBindGroupLayout(0),
+    entries:[{binding:0,resource:{buffer:uniformBuffer}}]
+  });
+}
+
+function resize(){
+  const dpr=Math.min(devicePixelRatio||1,2)*params.renderScale;
+  const w=Math.max(1,Math.floor(canvas.clientWidth*dpr));
+  const h=Math.max(1,Math.floor(canvas.clientHeight*dpr));
+  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
+  $('#res').textContent=`${w} × ${h}`;
+}
+
+function render(now){
+  requestAnimationFrame(render);
+  const dt=Math.min((now-last)/1000,.1); last=now;
+  if(running) time+=dt;
+  fpsFrames++;
+  if(now-fpsClock>500){
+    $('#fps').textContent=Math.round(fpsFrames*1000/(now-fpsClock));
+    fpsFrames=0; fpsClock=now;
+  }
+  if(!device||!pipeline) return;
+  resize();
+  device.queue.writeBuffer(uniformBuffer,0,new Float32Array([
+    time,params.intensity,params.scale,params.speed,
+    canvas.width,canvas.height,0,0
+  ]));
+  const encoder=device.createCommandEncoder();
+  const view=context.getCurrentTexture().createView();
+  const pass=encoder.beginRenderPass({
+    colorAttachments:[{view,clearValue:{r:0,g:0,b:0,a:1},loadOp:'clear',storeOp:'store'}]
+  });
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0,bindGroup);
+  pass.draw(3);
+  pass.end();
+  device.queue.submit([encoder.finish()]);
+}
+
+function loadPreset(name){
+  selected=name;
+  shaderEditor.value=shaders[name];
+  applyShader();
+}
+
+function bindRange(id,key,digits=2){
+  const el=$('#'+id), out=$('#'+id+'V');
+  const sync=()=>{params[key]=Number(el.value);out.textContent=params[key].toFixed(digits)};
+  el.addEventListener('input',sync); sync();
+}
+bindRange('intensity','intensity');
+bindRange('scale','scale');
+bindRange('speed','speed');
+bindRange('renderScale','renderScale');
+
+$('#preset').addEventListener('change',e=>loadPreset(e.target.value));
+$('#apply').addEventListener('click',applyShader);
+$('#format').addEventListener('click',()=>{shaderEditor.value=shaders[selected]});
+$('#play').addEventListener('click',e=>{running=!running;e.target.textContent=running?'PAUSE':'PLAY'});
+$('#reset').addEventListener('click',()=>time=0);
+
+$('#exportScene').addEventListener('click',()=>{
+  const payload={astra:'player-editor-001',preset:selected,params,shader:shaderEditor.value};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='astra-scene.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+$('#importScene').addEventListener('click',()=>$('#importFile').click());
+$('#importFile').addEventListener('change',async e=>{
+  const f=e.target.files?.[0]; if(!f)return;
+  try{
+    const x=JSON.parse(await f.text());
+    if(x.params) for(const k of ['intensity','scale','speed','renderScale']){
+      if(Number.isFinite(Number(x.params[k]))){params[k]=Number(x.params[k]);$('#'+k).value=params[k];$('#'+k+'V').textContent=params[k].toFixed(2)}
+    }
+    if(typeof x.shader==='string') shaderEditor.value=x.shader;
+    await applyShader();
+  }catch(err){setCompiler('Import failed: '+err,true)}
+  e.target.value='';
+});
+
+async function init(){
+  if(!navigator.gpu){
+    status.innerHTML='<span class="bad">WEBGPU UNAVAILABLE</span>';
+    setCompiler('This Astra experiment requires WebGPU. No WebGL fallback is provided.',true);
+    return;
+  }
+  try{
+    const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+    if(!adapter) throw new Error('No WebGPU adapter returned.');
+    device=await adapter.requestDevice();
+    context=canvas.getContext('webgpu');
+    context.configure({device,format:fmt,alphaMode:'opaque'});
+    uniformBuffer=device.createBuffer({size:32,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+    shaderEditor.value=shaders[selected];
+    await applyShader();
+    status.innerHTML='<span class="ok">WEBGPU READY</span>';
+    device.lost.then(info=>{
+      status.innerHTML='<span class="bad">DEVICE LOST</span>';
+      setCompiler('WebGPU device lost: '+info.message,true);
+    });
+    requestAnimationFrame(render);
+  }catch(err){
+    status.innerHTML='<span class="bad">WEBGPU INIT FAILED</span>';
+    setCompiler(String(err),true);
+  }
+}
+init();
+</script>
+</body>
+</html>

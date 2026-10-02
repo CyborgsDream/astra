@@ -81,7 +81,7 @@ export class GameUI {
         <footer class="menu-footer"><p class="desktop-hint"><kbd>W A S D</kbd> Move <span>·</span> Mouse Look <span>·</span> <kbd>E</kbd> Interact</p><p class="touch-hint">Explore with the on-screen controls.</p><div class="menu-coordinate"><span class="live-indicator"></span> THE CITY IS ALIVE</div></footer>
       </section>
       <section class="loading-screen" hidden aria-live="polite" aria-label="Loading game"><div class="loading-content"><span class="eyebrow">ASTRA CITY</span><h2>Finding your way in.</h2><p class="loading-message">Preparing the district…</p><div class="loading-track" role="progressbar" aria-label="Loading progress" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="loading-caption"><span>SWITCHBACK WARD</span><span class="loading-value"></span></div></div></section>
-      <section class="error-screen" hidden aria-live="assertive"><div class="error-content">${icon('warning', 32)}<span class="eyebrow">ASTRA CITY</span><h2>Unable to open the city.</h2><p class="error-message"></p><button class="primary-button" data-action="main-menu">Return to menu ${icon('arrow')}</button></div></section>
+      <section class="error-screen" hidden aria-live="assertive"><div class="error-content">${icon('warning', 32)}<span class="eyebrow">ASTRA CITY</span><h2>Unable to open the city.</h2><p class="error-message"></p><button class="primary-button" data-action="retry-startup">Retry graphics ${icon('reset')}</button></div></section>
       <section class="game-hud" hidden aria-label="Game status">
         <header class="hud-top"><div class="hud-place"><span class="eyebrow">SWITCHBACK WARD</span><span class="hud-location">Astra City</span><span class="hud-environment"></span></div><div class="hud-compass" aria-label="Compass"><span class="compass-neighbor compass-left"></span><i></i><span class="compass-current">N</span><i></i><span class="compass-neighbor compass-right"></span><span class="compass-degrees">000°</span></div><div class="hud-resources"><span class="hud-credits">${icon('credit', 17)}<b>—</b><span>CR</span></span><button class="minimap-button" data-action="open-panel" data-panel="map" aria-label="Open district map"><canvas class="minimap-canvas" aria-hidden="true"></canvas><span>District map <kbd>M</kbd></span></button></div></header>
         <div class="hud-objective" hidden><span class="objective-line"></span><div><span class="eyebrow">CURRENT OBJECTIVE</span><p></p><span class="objective-distance"></span></div></div>
@@ -214,7 +214,7 @@ export class GameUI {
     const envText = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} · ${pretty(weather)}`;
     if (env.dataset.value !== envText) { env.innerHTML = `${icon(weatherIcon, 14)}<span>${esc(envText)}</span>`; env.dataset.value = envText; }
     const yaw = finite(this.last.heading, finite(player.yaw));
-    const deg = ((yaw * 180 / Math.PI) % 360 + 360) % 360;
+    const deg = ((-yaw * 180 / Math.PI) % 360 + 360) % 360;
     const idx = Math.round(deg / 45) % 8;
     this.root.querySelector('.compass-current').textContent = CARDINALS[idx];
     this.root.querySelector('.compass-left').textContent = CARDINALS[(idx + 7) % 8];

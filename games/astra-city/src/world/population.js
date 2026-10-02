@@ -415,7 +415,8 @@ export class Population {
     if(pd<2&&Math.abs(this._player[1]-a.position[1])<1.5&&px*forwardX+pz*forwardZ>-.2) {
       side+=(px*rightX+pz*rightZ>0?-1:1)*.7*(1-pd/2);factor=Math.min(factor,clamp((pd-.7)/.9,0,1));
     }
-    a.sidestep+=(clamp(side,-.85,.85)-a.sidestep)*Math.min(1,dt*4);
+    const sidestepLimit=this._footFallback?.65:.34;
+    a.sidestep+=(clamp(side,-sidestepLimit,sidestepLimit)-a.sidestep)*Math.min(1,dt*4);
     a.blockedFor=factor<.12?a.blockedFor+dt:Math.max(0,a.blockedFor-dt);
     if(a.blockedFor>3.2)this._reverse(a);
     return factor;

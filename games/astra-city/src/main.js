@@ -4,6 +4,7 @@ import {PlayerInput} from './engine/input.js';
 import {Navigation,projectPoint} from './engine/navigation.js';
 import {CityAudio} from './engine/audio.js';
 import {Population} from './world/population.js';
+import {selectResidentCells} from './world/residency.js';
 import {SecuritySystem} from './world/security.js';
 import {GameState} from './game/state.js';
 import {QUESTS,ITEMS,FACTIONS} from './game/content.js';
@@ -24,6 +25,7 @@ let mode='loading',hasSave=false,started=false,nearby=null,objective=null,waypoi
 let renderTime=0,lastFrame=performance.now(),uiClock=0,saveClock=0,discoveryClock=0,routeClock=0;
 let route=[],scannerTime=0,debugEnabled=false,performanceEnabled=false,worldClockFrozen=false,detailLevel=2;
 let adaptiveScale=1,slowFrames=0,fastFrames=0,saveErrorShown=false,frameRequest=0;
+let residentCellSignature='',residentCellIds=new Set(),residencyClock=0;
 let repairSession=null,dialogueTarget=null,transition=null,disposal=false;
 let openedSignature='',disposeAgentTools=()=>{};
 let camera,menuCamera,environment={time:0,hour:15.5,weather:'clear',wetness:0};
@@ -81,7 +83,7 @@ async function init() {
     environment.hour=Number.isFinite(game.data.world.hour)?game.data.world.hour:15.5;
     environment.weather=game.data.world.weather || 'clear';
     ui.loading('Preparing city materials and lighting',.62);
-    await renderer.setWorld(visibleWorldInstances(),world.signs);
+    updateResidency(true);
     population.update(.02,player,environment);
     renderer.setDynamic(population.instances());
     input=new PlayerInput(canvas,{press:onKey,look:(x,y)=>player.look(x,y,game.data.settings.sensitivity,game.data.settings.invertY),unlock:()=>{if(mode==='playing' && !ui.isOpen && !transition)openPanel('pause');},blur:()=>{if(mode==='playing' && !ui.isOpen)openPanel('pause');},lockUnavailable:()=>ui.toast('Drag on the city to look around.','info')});
@@ -121,7 +123,7 @@ function startGame(fresh=false,confirmed=false) {
     game.setPlayer(player.position,player.yaw,player.pitch);
     collision.setOpen([]);
     openedSignature='';
-    renderer.setWorld(visibleWorldInstances(),world.signs);
+    updateResidency(true);
     waypoint=null;route=[];
   } else if(!started && hasSave) player.restore(game.data.player);
   started=true;mode='playing';ui.closePanel();ui.setPlaying(true);input.enabled=true;
@@ -173,7 +175,8 @@ function onKey(code,event={}) {
 
 async function onAction(action,payload={}) {
   try {
-    if(action==='new-game')startGame(true);
+    if(action==='retry-startup'){window.location.reload();return;}
+    else if(action==='new-game')startGame(true);
     else if(action==='confirm-new')startGame(true,true);
     else if(action==='continue')startGame(false);
     else if(action==='resume'||action==='close-panel')resume();
@@ -255,7 +258,7 @@ function syncOpenedDoors() {
   const next=[...(game.data.world.opened || [])].sort().join('|');
   if(next===openedSignature)return;
   openedSignature=next;collision.setOpen(game.data.world.opened);
-  renderer.setWorld(visibleWorldInstances(),world.signs);
+  updateResidency(true);
 }
 
 function showEnding(ending) {
@@ -439,7 +442,19 @@ function takeTransit(payload) {
 
 function visibleWorldInstances() {
   const opened=new Set(game.data.world.opened || []);
-  return world.instances.filter(i=>(i.detail || 0)<=detailLevel && (!i.owner || !opened.has(i.owner)));
+  const active=residentCellIds.size?residentCellIds:selectResidentCells(world?.cells,player?.position || world?.spawn?.position,1);
+  return world.instances.filter(i=>(i.detail || 0)<=detailLevel && (!i.owner || !opened.has(i.owner)) && (!i.cell || active.has(i.cell)));
+}
+
+function updateResidency(force=false) {
+  if(!world || !renderer)return false;
+  const next=selectResidentCells(world.cells,player?.position || world.spawn?.position,1);
+  const signature=[...next].sort().join('|')+`|d${detailLevel}|o${openedSignature}`;
+  if(!force && signature===residentCellSignature)return false;
+  residentCellIds=next;
+  residentCellSignature=signature;
+  renderer.setWorld(visibleWorldInstances(),world.signs);
+  return true;
 }
 
 function updateObjective() {
@@ -545,20 +560,21 @@ function frame(now) {
     const event=security.update(dt,player,game.data,renderTime);
     if(event.damage){handleResult(game.emit('damage',{amount:event.damage}),true);audio.play('damage');ui.toast(event.message,'error');}
     if(game.data.player.health<=0){
-      player.position=[...player.checkpoint];player.velocity.fill(0);game.emit('restore',{});
+      player.position=[...player.checkpoint];player.velocity.fill(0);game.emit('restore',{});updateResidency(true);
       ui.toast('Recovered at your safe address. Your equipment and work are retained.','info');security.exposure=0;
     }
-    discoveryClock+=dt;saveClock+=dt;routeClock+=dt;
+    discoveryClock+=dt;saveClock+=dt;routeClock+=dt;residencyClock+=dt;
     if(discoveryClock>1.3){discoveryClock=0;discoverNearby();}
     if(saveClock>30){saveClock=0;saveGame(false);}
     if(routeClock>2){routeClock=0;updateObjective();const goal=waypoint || objective?.position;route=goal?navigation.route(player.position,goal):[];}
+    if(residencyClock>.35){residencyClock=0;updateResidency(false);}
   }else if(debugEnabled && player.freeCamera){
     input.enabled=document.activeElement===canvas || input.pointer;
     player.update(dt,input.state(),game.data);
   }
   if(transition){
     transition.elapsed+=dt;
-    if(transition.elapsed>transition.duration*.5 && !transition.arrived){player.restore({position:transition.target,yaw:player.yaw,pitch:0});game.data.world.hour=(game.data.world.hour+.06)%24;transition.arrived=true;}
+    if(transition.elapsed>transition.duration*.5 && !transition.arrived){player.restore({position:transition.target,yaw:player.yaw,pitch:0});game.data.world.hour=(game.data.world.hour+.06)%24;transition.arrived=true;updateResidency(true);}
     if(transition.elapsed>=transition.duration){transition=null;transitionScreen.style.display='none';saveGame(false);resume();}
   }
   environment.time=renderTime;
@@ -634,7 +650,7 @@ function toggleDebug(force) {
     else if(el.name==='freeze')worldClockFrozen=el.checked;
     else if(el.name==='free'){player.freeCamera=el.checked;if(el.checked){input.enabled=true;canvas.focus();input.requestLock();}}
     else if(el.name==='perf')performanceEnabled=el.checked;
-    else if(el.name==='detail'){detailLevel=Number(el.value);renderer.setWorld(visibleWorldInstances(),world.signs);}
+    else if(el.name==='detail'){detailLevel=Number(el.value);updateResidency(true);}
     else if(el.name==='teleport'&&el.value){const loc=world.locations.find(i=>i.id===el.value);player.restore({position:loc.position,yaw:player.yaw,pitch:0});}
   });
   dev.querySelector('[name="close"]').onclick=()=>toggleDebug(false);
@@ -654,8 +670,8 @@ function exposeDevelopmentApi() {
     getStats:collectStats,getMode:()=>mode,getObjective:()=>objective,getNearby:closestInteraction,
     save:()=>saveGame(false),load:()=>{const ok=game.load();if(ok){player.restore(game.data.player);syncOpenedDoors();}return ok;},
     start:()=>startGame(false),interact,onAction,
-    teleport:id=>{const p=typeof id==='string'?(world.interactables.find(i=>i.id===id)?.position || world.locations.find(i=>i.id===id)?.position):id;if(!p)return false;player.restore({position:[...p],yaw:player.yaw,pitch:0});return true;},
-    renderAt:async(position,yaw,pitch=0)=>{player.restore({position,yaw,pitch});mode='playing';ui.setPlaying(true);ui.closePanel();camera=player.camera(game.data.settings.fov);renderer.render(camera,environment,{quality:game.data.settings.quality,renderScale:adaptiveScale});return collectStats();},
+    teleport:id=>{const p=typeof id==='string'?(world.interactables.find(i=>i.id===id)?.position || world.locations.find(i=>i.id===id)?.position):id;if(!p)return false;player.restore({position:[...p],yaw:player.yaw,pitch:0});updateResidency(true);return true;},
+    renderAt:async(position,yaw,pitch=0)=>{player.restore({position,yaw,pitch});updateResidency(true);mode='playing';ui.setPlaying(true);ui.closePanel();camera=player.camera(game.data.settings.fov);renderer.render(camera,environment,{quality:game.data.settings.quality,renderScale:adaptiveScale});return collectStats();},
     dispose:()=>{disposal=true;cancelAnimationFrame(frameRequest);disposeAgentTools();input.destroy();audio.dispose();population.dispose();renderer.dispose();ui.destroy();}
   };
 }

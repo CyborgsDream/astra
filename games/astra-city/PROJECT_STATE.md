@@ -23,16 +23,16 @@ Current session baseline: 49 unit tests passed, 0 failed; district validation pa
 
 ## Next work
 
-Complete fresh WebGPU runtime validation, archive the validated source, publish the same private Site, and retain objective evidence.
+Run fresh native-hardware WebGPU runtime validation and republish the private Site from this recovered source when the publishing connector is available. Retain objective evidence; do not infer physical-GPU performance from software rendering.
 
 ## Known limitations / blockers
 
-- Current renderer keeps all 16 cells resident; actual residency streaming is still required.
-- Previous user-visible startup reported failure to acquire a WebGPU adapter. Investigate initialization and distinguish unsupported hardware from source defects.
+- Static GPU geometry now uses bounded 3×3 cell residency (4–9 cells depending on position); CPU world data remains deterministic and resident for navigation/collision.
+- WebGPU initialization now retries adapter acquisition with high-performance, default, and low-power preferences; the startup error offers a real retry via page reinitialization.
 - Public GitHub shell push lacks credentials; connected GitHub write operations are available and will be used without altering existing experiment files.
 - Physical Android and desktop GPU performance cannot be inferred from software-renderer testing.
 - Drive folder initially contained only the prompt; source checkpoints are being established now.
-- Fresh review found nonfunctional retry after startup failure, reversed east/west compass labels, and population obstacle issues. Repairs are in progress.
+- Startup retry, compass east/west orientation, and pedestrian sidestep wall-clipping were repaired in the source recovery pass.
 
 ## Recovery procedure
 

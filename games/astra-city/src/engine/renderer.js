@@ -191,8 +191,21 @@ export class Renderer {
     if (!globalThis.navigator?.gpu) {
       throw new Error('Native WebGPU is unavailable. Open the city in a browser with WebGPU enabled on a secure origin.');
     }
-    const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
-    if (!adapter) throw new Error('The browser could not acquire a WebGPU adapter. Check GPU acceleration and WebGPU support.');
+    let adapter = null;
+    const adapterAttempts = [
+      { powerPreference: 'high-performance' },
+      {},
+      { powerPreference: 'low-power' },
+    ];
+    for (const options of adapterAttempts) {
+      try {
+        adapter = await navigator.gpu.requestAdapter(options);
+      } catch (error) {
+        this._recordError(`WebGPU adapter attempt failed: ${describeError(error)}`);
+      }
+      if (adapter) break;
+    }
+    if (!adapter) throw new Error('The browser could not acquire a WebGPU adapter after trying high-performance and default adapters. Check GPU acceleration and WebGPU support.');
     const features = [];
     this._timestampsSupported = adapter.features.has('timestamp-query');
     if (this._timestampsSupported) features.push('timestamp-query');

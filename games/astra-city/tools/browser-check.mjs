@@ -22,7 +22,7 @@ try{
  await page.waitForFunction(()=>window.__ASTRA__?.ready || window.__ASTRA_BOOT_ERROR__,{timeout:90000});
  const boot=await page.evaluate(()=>({error:window.__ASTRA_BOOT_ERROR__,ready:window.__ASTRA__?.ready,mode:window.__ASTRA__?.getMode()}));
  results.boot=boot;if(boot.error)throw new Error(boot.error);
- await page.evaluate(async()=>{const a=window.__ASTRA__;await a.onAction('settings',{quality:'medium',renderScale:1,adaptive:false,volume:0});await a.renderer.device.queue.onSubmittedWorkDone();});
+ await page.evaluate(async()=>{const a=window.__ASTRA__;await a.onAction('settings',{quality:'low',renderScale:.5,adaptive:false,volume:0});await a.renderer.device.queue.onSubmittedWorkDone();});
  await page.screenshot({path:output+'/release-menu.png',timeout:45000});
  await quality();
  await page.locator('[data-action="new-game"]').click();
@@ -31,7 +31,7 @@ try{
  results.started=true;
  await page.evaluate(async()=>{
    const a=window.__ASTRA__;
-   await a.onAction('settings',{quality:'medium',renderScale:.75,adaptive:false,volume:0});
+   await a.onAction('settings',{quality:'low',renderScale:.5,adaptive:false,volume:0});
    await a.renderAt([-21.8,0,-22.35],Math.PI-.06,-.025);
    await a.renderer.device.queue.onSubmittedWorkDone();
  });

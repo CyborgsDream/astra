@@ -96,8 +96,8 @@ The previous valid save is retained as a backup. Version-one records migrate wit
 
 ## Scope and diagnostics
 
-Switchback is a finite district. Its current default world contains 57,535 static geometry instances, 1,236 colliders, nine ramps, 31 interactables, 12 named locations, 16 cells, and 2,339 navigation nodes. Dynamic people, vehicles, and status indicators add their own geometry.
+Switchback is a finite district. Its current default world contains 75,764 static geometry instances, 1,236 colliders, nine ramps, 31 interactables, 12 named locations, 16 cells, and 2,339 navigation nodes. The street-density pass contributes 12,182 deterministic detail instances; dynamic people, vehicles, and status indicators add their own geometry.
 
-All cells remain resident; GPU visibility culling reduces rendering work. F3 displays runtime measurements, and F4 exposes inspection controls. Performance depends on the actual browser, adapter, resolution, and scene. The project does not make a hardware frame-rate guarantee.
+The CPU keeps the complete finite district available for collision and navigation, while static GPU residency is bounded to the nearby 3×3 cell neighbourhood (four to nine cells at district edges/interior). Compute visibility culling, shared primitive geometry, instancing, indirect drawing and distance/detail limits keep the added density GPU-oriented. F3 displays runtime measurements, and F4 exposes inspection controls. Performance depends on the actual browser, adapter, resolution, and scene. The project does not make a physical-hardware frame-rate guarantee.
 
 See [Architecture and limitations](docs/architecture.md) for the rendering pipeline, module boundaries, measurement definitions, and deliberate omissions.

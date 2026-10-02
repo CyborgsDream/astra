@@ -4,8 +4,9 @@ Recovered 2026-10-02 from the existing Switchback Ward source. These features ex
 
 - Native WebGPU instancing, compute visibility culling, indirect drawing, shadows, material atlas, sky and rain.
 - Deterministic 16-cell district with layered buildings, streets, market, interiors, courtyards, rooftops, undercroft, stairs and service routes.
+- Street-level density/realism layer with deterministic surface repairs, cracks, drains, service covers, wet patches, edge grime, clustered litter/weeds, delivery clutter, street furniture, façade repairs, service equipment, hanging utilities, roof additions and construction-history variation.
 - Walking, sprinting, crouching, jumping/mantling, collision, scooter, ladders, lifts and ward transit.
-- Named characters, contextual dialogue, pedestrians, traffic, service robots and security simulation.
+- Named characters, contextual dialogue, pedestrians, traffic, service robots and security simulation, plus fourteen low-cost ambient activity actors covering browsing, conversation, sitting, waiting, delivery/carrying, maintenance, display-looking and resting.
 - Data-driven 15-mission set, multi-stage story, three endings, independent and repeatable jobs.
 - Credits, equipment effects, shops, supplies, discoveries and faction reputation.
 - Versioned local saves with previous-save recovery, migration and corrupt-save protection.

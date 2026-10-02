@@ -1,6 +1,6 @@
 # ASTRA CITY — Project state
 
-Updated: 2026-10-02. Current task: recover, validate, extend and republish Switchback Ward.
+Updated: 2026-10-02. Current task: completed street-level density and realism pass on the existing Switchback Ward / Switchback Court district; map bounds and gameplay topology preserved.
 
 ## Recovery baseline
 
@@ -13,17 +13,20 @@ Updated: 2026-10-02. Current task: recover, validate, extend and republish Switc
 
 ## Last verified build
 
-Current session baseline: 49 unit tests passed, 0 failed; district validation passed (57,535 static instances, 1,236 colliders, 31 interaction targets, 16 cells); production and portable HTML builds passed. Native browser/GPU verification is pending. Historical browser reports are retained separately.
+Current density-pass release: 55 unit tests passed, 0 failed. District validation passed with 75,764 static instances, 1,236 colliders, 31 interaction targets, 16 cells, 2,339 navigation nodes, zero invalid transforms, zero blocked/unsupported targets, zero route failures, and deterministic regeneration. Production and portable HTML builds passed.
+
+A fresh headed Chromium/WebGPU release flow also passed under Xvfb with SwiftShader Vulkan: native WebGPU initialization, the density view, mission interaction flow, hacking, assisted repair, opened-door synchronization, final-story fixtures, save/reload, rain, mobile layout, standalone HTML, unsupported-WebGPU messaging, and disposal completed with no browser or renderer errors. This software adapter validates the API/runtime path; it is not a physical-GPU performance benchmark.
 
 ## Current work
 
-1. Preserve recovery baseline in a complete source checkpoint and GitHub subdirectory.
-2. Run the existing tests/build and independently review launch, world residency, gameplay and saves.
-3. Fix the first demonstrated failures and implement missing required systems.
+1. Preserve the existing district bounds, 16-cell topology, missions, traversal, collision and save/gameplay systems.
+2. Keep the density pass semantically placed and deterministic rather than uniformly scattered.
+3. Retain the 3×3 GPU cell-residency limit and shared primitive/instanced rendering while increasing street-level information.
+4. Maintain automated source, district, build and headed-WebGPU browser evidence on the recovered game.
 
 ## Next work
 
-Run fresh native-hardware WebGPU runtime validation and republish the private Site from this recovered source when the publishing connector is available. Retain objective evidence; do not infer physical-GPU performance from software rendering.
+Do not expand the map unless explicitly requested. The next release work is physical-hardware WebGPU validation and republishing the private Site from this source when the publishing connector is available. Continue to treat SwiftShader results as functional validation only, not desktop/mobile performance evidence.
 
 ## Known limitations / blockers
 

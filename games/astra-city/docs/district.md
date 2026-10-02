@@ -6,7 +6,7 @@
 
 | Item | Count |
 | --- | ---: |
-| Architectural and prop instances | 57,535 |
+| Architectural and prop instances | 75,764 |
 | AABB colliders | 1,236 |
 | Analytic ramps with matching stair geometry | 9 |
 | Interactables | 31 |
@@ -27,6 +27,8 @@ The district uses old brick and concrete bases, muted jade additions, faded awni
 The opening includes a worn loading apron, guardrail, handcart, leaning bicycle, refuse, crates, weeds, and repaired asphalt. The close workshop facade has upper windows, projecting frames, belts, balconies, AC units, pipework, signage, and weathering patches. An occupied upper room and gallery were added above the broker. A real kitchen and tailor shop, plus an old weighhouse, break the market into smaller spaces.
 
 Detail placement follows use: crates near receiving areas; waste near service edges; drainage along roads; AC next to windows; condensate pipes leading downward; roof machinery connected by pipework; cables linked between poles and destinations. Most small props are grouped around these purposes rather than distributed uniformly.
+
+The 2026-10-02 density pass adds 12,182 deterministic visual instances without changing collision or map bounds. On the default seed its semantic counters report 400 ground-surface history elements, 44 drains, 112 service covers, 365 street-edge elements, 981 façade repair layers, 4,684 façade/utility elements, 95 commercial-life elements, 370 vertical layers, 38 visible construction-history additions, 16 painted-mark groups, and fourteen ambient-use anchors. Window dimensions, depths, frames, blinds/curtains, partial openings and notices now vary per building stream rather than following one repeated treatment.
 
 Nearby taller buildings and Needle House establish vertical scale. The rail corridor is excluded from ordinary infill. Needle House contains an actual structural passage for the track and overhead wiring, rather than allowing the tram to cross a solid building.
 

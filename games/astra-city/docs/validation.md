@@ -6,10 +6,10 @@ Release: **ASTRA CITY 1.0.0 · Switchback Ward**. Validation date: **2026-10-02*
 
 | Layer | Result | Evidence and scope |
 | --- | --- | --- |
-| Node unit tests | **49 passed, 0 failed** | Gameplay, all three endings, rewards, economy, upgrades, save migration/recovery/failures, physics, navigation, population, input capture and rendering mathematics |
+| Node unit tests | **55 passed, 0 failed** | Gameplay, all three endings, rewards, economy, upgrades, save migration/recovery/failures, physics, navigation, population, input capture, residency and density determinism/coverage |
 | Generated district | **Passed** | Finite transforms; 31 supported and unobstructed interaction targets; connected target graph; sampled ramp and walking-route clearance/support; determinism; tram route; door ownership |
 | Production build | **Passed** | Static web build and self-contained HTML generated without build errors |
-| Native GPU execution | **Passed** | Chromium 153 / SwiftShader Vulkan; real WebGPU shader compilation and rendering; no shader, GPU-validation or browser errors |
+| Native WebGPU API execution | **Passed** | Headed Chrome under Xvfb with SwiftShader Vulkan; real WebGPU shader compilation/rendering and timestamp queries; no renderer/browser errors. This validates the WebGPU path, not physical-GPU speed. |
 | Browser interaction flow | **Passed** | New game, dialogue, delivery/payment, circuit buttons, repair assistance, opened-door synchronization, ending/replay, save/reload and panels |
 | Rain and resize | **Passed** | Rainy-night render; 390 × 844 mobile panel viewport with no horizontal overflow |
 | Standalone file | **Passed** | Opened `dist/astra-city.html` through a `file:` URL; embedded worker generated the district and native renderer initialized |
@@ -17,7 +17,7 @@ Release: **ASTRA CITY 1.0.0 · Switchback Ward**. Validation date: **2026-10-02*
 | Resource disposal | **Passed** | Renderer disposal completed and marked the renderer unavailable |
 | Optional WebMCP | **Contract tests passed; browser validation unavailable** | The test browser did not expose `document.modelContext`; the game does not depend on it |
 
-Browser and renderer snapshots are retained in [evidence/browser.json](evidence/browser.json) and [evidence/renderer.json](evidence/renderer.json). They are observed outputs from their respective runs, not fabricated live statistics.
+Historical baseline snapshots remain in [evidence/browser.json](evidence/browser.json) and [evidence/renderer.json](evidence/renderer.json). The current density-pass summary is retained in [evidence/density-pass.json](evidence/density-pass.json). These are observed outputs from their respective runs, not fabricated live statistics.
 
 ## What the browser check does
 
@@ -29,24 +29,29 @@ The checker also opens the map, inventory and settings, verifies mobile width, r
 
 The release run records no browser errors. It finishes with a nonzero exit code if any assertion fails. No click is forced through an obstructing overlay.
 
-## Renderer observation
+## Density-pass WebGPU observation
 
-One medium-quality frame at 1280 × 720, with 4× MSAA, reported:
+The headed Linux release run captured the density-pass opening view at 640 × 360, low quality, 0.5 render scale, on the SwiftShader Vulkan software adapter. A completed asynchronous readback later in the same browser flow reported:
 
 | Measurement | Observed value |
 | --- | ---: |
-| Static world instances | 57,535 |
-| Total static + population instances | 59,214 |
-| Main visible instances | 15,629 |
-| Main triangles | 395,888 |
-| Shadow-visible instances | 43,283 |
+| Generated static world instances | 75,764 |
+| Static + dynamic instances resident in sampled frame | 54,878 |
+| Loaded static cells | 9 |
+| Main visible instances | 9,911 |
+| Main triangles | 258,726 |
+| Shadow-visible instances | 28,109 |
+| Shadow triangles | 684,670 |
 | Draw calls | 17 |
 | Compute dispatches | 8 |
-| Tracked GPU allocations | 57,473,056 bytes / about 54.8 MiB |
+| Tracked GPU allocations | 22,864,256 bytes / about 21.8 MiB |
+| NPCs | 67 |
+| Traffic actors | 14 |
+| Dedicated ambient-activity actors | 14 |
 
-This capture preceded the final small population route filter and additional game status indicators. Counts change with camera, quality, dynamic actors, and the sampled frame. Readback is asynchronous; zero counters with `visibilityPending: true` mean no completed readback sample yet.
+The density generator itself reported 12,182 newly added deterministic detail instances. No renderer or browser errors were recorded during the full interaction/save/rain/standalone flow.
 
-The software adapter took approximately two seconds of GPU time for this medium-quality frame. **That is a software validation environment, not a physical-GPU performance benchmark.** No 60 FPS claim is made. F3 reports real frame intervals, including slow frames; GPU timestamps are optional and are never substituted with a guessed value. Memory estimates cover tracked buffers and textures, not all browser or driver allocations.
+SwiftShader is a CPU software rasterizer. Its measured GPU time and frame rate are therefore **functional validation data, not a physical desktop/mobile performance benchmark**. The release does not infer a 60 FPS claim from this run.
 
 ## Reproduce
 

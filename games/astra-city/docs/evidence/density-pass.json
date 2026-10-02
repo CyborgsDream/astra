@@ -1,0 +1,69 @@
+{
+  "release": "ASTRA CITY density pass",
+  "date": "2026-10-02",
+  "sourceCommit": "2ab71aafb926bff2cea21dc5f5a9a803f0d9c6f5",
+  "sourceValidationRun": 37034262850,
+  "browserEvidenceRun": 37034262852,
+  "unitTests": {
+    "passed": 55,
+    "failed": 0
+  },
+  "district": {
+    "staticInstances": 75764,
+    "colliders": 1236,
+    "ramps": 9,
+    "interactables": 31,
+    "locations": 12,
+    "cells": 16,
+    "navigationNodes": 2339,
+    "navigationEdges": 6987,
+    "badTransforms": 0,
+    "blockedTargets": 0,
+    "unsupportedTargets": 0,
+    "disconnectedTargets": 0,
+    "rampIssues": 0,
+    "walkIssues": 0,
+    "unsupportedWalk": 0,
+    "deterministic": true
+  },
+  "density": {
+    "groundSurface": 400,
+    "drains": 44,
+    "serviceCovers": 112,
+    "streetEdges": 365,
+    "facadeLayers": 981,
+    "facadeUtilities": 4684,
+    "commercialLife": 95,
+    "verticalLayers": 370,
+    "architecturalHistory": 38,
+    "paintedMarks": 16,
+    "ambientAnchors": 14,
+    "totalAdded": 12182
+  },
+  "webgpu": {
+    "passed": true,
+    "adapter": "google / swiftshader",
+    "headedXvfb": true,
+    "quality": "low",
+    "renderWidth": 640,
+    "renderHeight": 360,
+    "renderScale": 0.5,
+    "sampled": {
+      "instances": 54878,
+      "loadedCells": 9,
+      "visibleObjects": 9911,
+      "triangles": 258726,
+      "shadowVisibleObjects": 28109,
+      "shadowTriangles": 684670,
+      "drawCalls": 17,
+      "computeDispatches": 8,
+      "memoryBytes": 22864256,
+      "npcCount": 67,
+      "trafficCount": 14,
+      "ambientCount": 14
+    },
+    "rendererErrors": [],
+    "browserErrors": []
+  },
+  "note": "SwiftShader validates the WebGPU/runtime path. It is not a physical-GPU performance benchmark."
+}

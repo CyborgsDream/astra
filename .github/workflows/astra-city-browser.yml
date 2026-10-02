@@ -22,7 +22,13 @@ jobs:
           cache-dependency-path: games/astra-city/package-lock.json
       - run: npm ci
       - run: npm run build
-      - run: npm run test:browser
+      - name: Install Linux WebGPU software stack
+        run: sudo apt-get update && sudo apt-get install -y libvulkan1 mesa-vulkan-drivers xvfb xauth
+      - name: Run headed WebGPU evidence under Xvfb
+        env:
+          ASTRA_HEADFUL: "1"
+          ASTRA_SWIFTSHADER: "1"
+        run: xvfb-run -a npm run test:browser
       - uses: actions/upload-artifact@v4
         if: always()
         with:
